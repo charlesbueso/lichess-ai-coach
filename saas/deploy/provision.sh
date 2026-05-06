@@ -73,7 +73,7 @@ sudo -u postgres psql -d "$DB_NAME" -f "$APP_DIR/saas/migrations/0001_init.sql"
 echo "==> Writing /etc/coach.env (FILL IN SECRETS)"
 if [ ! -f /etc/coach.env ]; then
   cat > /etc/coach.env <<EOF
-DATABASE_URL=postgresql://$DB_USER:$DB_PASS@127.0.0.1:5432/$DB_NAME
+DATABASE_URL=postgresql://$DB_USER:$DB_PASS@127.0.0.1:5432/$DB_NAME?sslmode=disable
 
 DISCORD_TOKEN=
 DISCORD_CLIENT_ID=

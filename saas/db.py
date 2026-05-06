@@ -26,6 +26,7 @@ async def init_pool() -> asyncpg.Pool:
             min_size=1,
             max_size=10,
             command_timeout=30,
+            ssl=False,
         )
         log.info("Postgres pool initialised")
     return _pool
