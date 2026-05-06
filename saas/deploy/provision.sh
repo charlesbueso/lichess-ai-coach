@@ -23,8 +23,11 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
     debian-keyring debian-archive-keyring apt-transport-https
 
 echo "==> Installing Caddy"
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | tee /etc/apt/trusted.gpg.d/caddy-stable.asc >/dev/null
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
+curl -fsSL 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+  | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] \
+https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" \
+  > /etc/apt/sources.list.d/caddy-stable.list
 apt-get update -y
 apt-get install -y caddy
 
