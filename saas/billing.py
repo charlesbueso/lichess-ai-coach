@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import json
 import logging
 from typing import Any
 
@@ -22,16 +23,20 @@ def _ts_to_dt(ts) -> dt.datetime | None:
 
 
 def _to_plain(obj: Any) -> Any:
-    """Recursively convert a Stripe SDK object (or container) to plain Python.
+    """Convert a Stripe SDK object to plain Python (dict / list / scalars).
 
-    Stripe's ``StripeObject`` is dict-like (iterating yields keys) but does not
-    expose ``.get()`` and the recursive ``to_dict_recursive`` helper is private
-    in newer SDK versions. We convert by walking keys.
+    Stripe's ``StripeObject`` does not implement ``.get()`` and triggers
+    ``AttributeError`` on most attribute access. Its ``__str__`` returns JSON,
+    so the safest, version-stable conversion is to round-trip via JSON.
     """
-    # StripeObject lives at stripe._stripe_object in modern SDKs; duck-type via keys().
-    if hasattr(obj, "keys") and hasattr(obj, "__getitem__") and not isinstance(obj, dict):
+    if isinstance(obj, stripe.stripe_object.StripeObject) if hasattr(stripe, "stripe_object") else False:
+        return json.loads(str(obj))
+    # Fallback duck-type: Stripe objects in newer SDKs live at stripe._stripe_object.
+    cls_name = type(obj).__name__
+    mod_name = type(obj).__module__
+    if cls_name in ("StripeObject",) or mod_name.startswith("stripe."):
         try:
-            return {k: _to_plain(obj[k]) for k in obj.keys()}
+            return json.loads(str(obj))
         except Exception:
             pass
     if isinstance(obj, dict):
