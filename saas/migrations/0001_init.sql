@@ -80,3 +80,13 @@ CREATE TABLE IF NOT EXISTS pending_installs (
 
 CREATE INDEX IF NOT EXISTS pending_installs_expires_idx
     ON pending_installs(expires_at);
+
+-- Grant the app role full access to all objects in this schema.
+-- Run as superuser (postgres). Safe to re-apply.
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO coach;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO coach;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO coach;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT ALL PRIVILEGES ON TABLES TO coach;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT ALL PRIVILEGES ON SEQUENCES TO coach;
