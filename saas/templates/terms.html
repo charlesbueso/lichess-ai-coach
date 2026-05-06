@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2 style="margin-top: 0;">Terms of Service</h2>
+  <p class="muted">Last updated: 2026.</p>
+
+  <h3>The service</h3>
+  <p>{{ app_name }} provides automated Lichess game analysis posted to your Discord server, billed monthly via Stripe.</p>
+
+  <h3>Subscription &amp; billing</h3>
+  <ul>
+    <li>$5/month after a 7-day free trial.</li>
+    <li>Cancel any time via <code>/billing</code>; access continues to the end of the paid period.</li>
+    <li>Payments are non-refundable except where required by law.</li>
+  </ul>
+
+  <h3>Acceptable use</h3>
+  <ul>
+    <li>One Lichess account per subscription.</li>
+    <li>Reasonable usage caps apply (currently 20 game analyses per day, 10 follow-up questions per game). We may adjust caps for fairness; abusive usage may be throttled or terminated.</li>
+    <li>Don't use the service to violate Lichess's or Discord's Terms of Service.</li>
+  </ul>
+
+  <h3>Disclaimers</h3>
+  <p>The service is provided as-is. AI-generated coaching may be imperfect or wrong. Use it as a study aid, not a tournament arbiter.</p>
+
+  <h3>Liability</h3>
+  <p>To the maximum extent permitted by law, our total liability is capped at the amounts you paid us in the prior 12 months.</p>
+
+  <h3>Changes</h3>
+  <p>We may update these terms; material changes will be announced via email or in-app notification.</p>
+
+  <h3>Contact</h3>
+  <p><a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+</div>
+{% endblock %}
