@@ -42,7 +42,8 @@ def _create_checkout_session_sync() -> str:
 
 
 async def retrieve_session(session_id: str) -> dict[str, Any]:
-    return await asyncio.to_thread(stripe.checkout.Session.retrieve, session_id)
+    sess = await asyncio.to_thread(stripe.checkout.Session.retrieve, session_id)
+    return sess.to_dict_recursive()
 
 
 async def create_billing_portal_url(customer_id: str) -> str:
@@ -55,12 +56,13 @@ async def create_billing_portal_url(customer_id: str) -> str:
 
 
 def verify_webhook(payload: bytes, sig_header: str) -> dict:
-    """Verify Stripe webhook signature, return the parsed event."""
-    return stripe.Webhook.construct_event(
+    """Verify Stripe webhook signature, return the parsed event as a plain dict."""
+    event = stripe.Webhook.construct_event(
         payload=payload,
         sig_header=sig_header,
         secret=app_config.STRIPE_WEBHOOK_SECRET,
     )
+    return event.to_dict_recursive()
 
 
 def map_subscription_status(stripe_status: str) -> str:
