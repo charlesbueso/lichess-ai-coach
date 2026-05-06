@@ -116,7 +116,15 @@ async def upsert_tenant_from_stripe(
             VALUES ($1, $2, $3::tenant_status, $4, $5)
             ON CONFLICT (stripe_customer_id) DO UPDATE
                 SET stripe_subscription_id = COALESCE(EXCLUDED.stripe_subscription_id, tenants.stripe_subscription_id),
-                    status                 = EXCLUDED.status,
+                    -- Don't regress an already-active/trialing/past_due tenant back to 'pending'
+                    -- if a late checkout.session.completed webhook arrives after the
+                    -- customer.subscription.created event has already promoted the row.
+                    status                 = CASE
+                        WHEN EXCLUDED.status = 'pending'
+                         AND tenants.status IN ('trialing', 'active', 'past_due')
+                            THEN tenants.status
+                        ELSE EXCLUDED.status
+                    END,
                     trial_end              = COALESCE(EXCLUDED.trial_end, tenants.trial_end),
                     install_email          = COALESCE(EXCLUDED.install_email, tenants.install_email),
                     updated_at             = now()
