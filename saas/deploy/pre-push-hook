@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Pre-push hook: refuse to push the private `saas` branch to anything other
+# than `origin/saas`. Prevents accidentally leaking SaaS code into a public
+# branch like `main`.
+#
+# Install with:
+#   cp saas/deploy/pre-push-hook .git/hooks/pre-push
+#   chmod +x .git/hooks/pre-push
+
+protected_branch="saas"
+remote="$1"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    # Refs look like 'refs/heads/saas'
+    local_branch="${local_ref#refs/heads/}"
+    remote_branch="${remote_ref#refs/heads/}"
+
+    if [ "$local_branch" = "$protected_branch" ] && [ "$remote_branch" != "$protected_branch" ]; then
+        echo "ERROR: refusing to push '$local_branch' to '$remote_branch' on '$remote'." >&2
+        echo "       The 'saas' branch must only ever push to origin/saas." >&2
+        exit 1
+    fi
+done
+
+exit 0

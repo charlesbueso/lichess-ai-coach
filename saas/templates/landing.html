@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2 style="margin-top: 0;">A faceless AI chess coach in your Discord.</h2>
+  <p class="muted">
+    Connect your Lichess account once. Every game you play gets posted as a
+    blog-style breakdown right inside your own Discord server — opening,
+    critical moment, endgame, strengths, and concrete improvements.
+    Ask follow-up questions per game with <code>/ask</code>.
+  </p>
+
+  <ul>
+    <li>📥 Auto-imports new Lichess games within minutes</li>
+    <li>🎯 Engine-verified critical moments (Stockfish 18)</li>
+    <li>🤖 Per-game Q&amp;A — &ldquo;Why was move 17 bad?&rdquo;</li>
+    <li>🪝 Installs with one click into your existing Discord server</li>
+  </ul>
+
+  <div class="row" style="margin-top: 20px;">
+    <a class="btn" href="/checkout"
+       onclick="if(window.posthog){posthog.capture('checkout_started');}">
+      Start 7-day free trial — $5/mo
+    </a>
+    <a class="btn secondary" href="https://github.com/charlesbueso/lichess-ai-coach"
+       target="_blank" rel="noreferrer">View source</a>
+  </div>
+  <p class="muted" style="margin-top: 16px; font-size: 13px;">
+    Card required, cancel any time. No bot-server provisioning, no Lichess API
+    token of your own — install in any server you can manage.
+  </p>
+</div>
+
+<div class="panel">
+  <h3 style="margin-top: 0;">How it works</h3>
+  <ol>
+    <li>Subscribe (Stripe Checkout, 7-day trial).</li>
+    <li>Click <strong>Add to Discord</strong> on the next page and pick your server.</li>
+    <li>In your server, run <code>/setup lichess:&lt;username&gt; channel:#chess</code>.</li>
+    <li>Play on Lichess. Your next game shows up as a coached blog post.</li>
+  </ol>
+</div>
+{% endblock %}

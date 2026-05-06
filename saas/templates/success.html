@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2 style="margin-top: 0;">All set. ♞</h2>
+  <p>
+    The bot is now in your server. In Discord, run:
+  </p>
+  <p><code>/setup lichess:&lt;your_lichess_username&gt; channel:#some-channel</code></p>
+  <p class="muted">
+    Play any Lichess game and the analysis appears in that channel within
+    minutes. You can change channels later with <code>/setchannel</code>, and
+    manage billing with <code>/billing</code>.
+  </p>
+  <a class="btn secondary" href="/">Back to home</a>
+</div>
+{% endblock %}

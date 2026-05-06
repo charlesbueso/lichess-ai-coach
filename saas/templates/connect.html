@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2 style="margin-top: 0;">Payment confirmed. One step left.</h2>
+  <p class="muted">
+    {% if email %}We sent a backup of this link to <code>{{ email }}</code>.{% endif %}
+    Click below to install the bot into one of your Discord servers.
+  </p>
+  <a class="btn" href="{{ install_url }}"
+     onclick="if(window.posthog){posthog.capture('discord_install_clicked');}">
+    Add to Discord
+  </a>
+  <p class="muted" style="margin-top: 16px; font-size: 13px;">
+    You'll be asked to choose which server to install into. Pick one where you
+    have <strong>Manage Server</strong> permission. The link is single-use and
+    expires in 30 minutes.
+  </p>
+</div>
+{% endblock %}

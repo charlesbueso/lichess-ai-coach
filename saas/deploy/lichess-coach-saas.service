@@ -1,0 +1,29 @@
+[Unit]
+Description=Lichess AI Coach (SaaS)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=coach
+Group=coach
+WorkingDirectory=/opt/lichess-ai-coach
+EnvironmentFile=/etc/coach.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/lichess-ai-coach/.venv/bin/python -m saas.main
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/lichess-ai-coach
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

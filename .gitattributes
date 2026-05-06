@@ -1,0 +1,6 @@
+# Force LF on Linux shell scripts and systemd units (deployed to Ubuntu).
+saas/deploy/*.sh        text eol=lf
+saas/deploy/pre-push-hook text eol=lf
+saas/deploy/Caddyfile   text eol=lf
+saas/deploy/*.service   text eol=lf
+saas/migrations/*.sql   text eol=lf

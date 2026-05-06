@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2 style="margin-top: 0;">Privacy Policy</h2>
+  <p class="muted">Last updated: 2026.</p>
+
+  <h3>What we collect</h3>
+  <ul>
+    <li>Your email address and payment method (handled by Stripe — we never see card numbers).</li>
+    <li>Your Discord user ID, Discord server (guild) ID, and the channel ID you select.</li>
+    <li>Your public Lichess username and the games you play after installation. Game data is fetched from the public Lichess API.</li>
+    <li>Coaching outputs generated for your games (text + images).</li>
+  </ul>
+
+  <h3>What we don't do</h3>
+  <ul>
+    <li>We don't read messages in your Discord server. The bot uses slash commands only and does not request the Message Content Intent.</li>
+    <li>We don't sell or rent your data to third parties.</li>
+    <li>We don't post anything outside the channel you configured.</li>
+  </ul>
+
+  <h3>Sub-processors</h3>
+  <ul>
+    <li>Stripe — payments.</li>
+    <li>Discord — bot platform.</li>
+    <li>Lichess — game data source (public API).</li>
+    <li>Groq — LLM inference (game data is sent for analysis).</li>
+    <li>chess-api.com — Stockfish engine analysis (FENs only).</li>
+    <li>DigitalOcean — hosting.</li>
+    <li>Sentry / PostHog — error and product analytics.</li>
+  </ul>
+
+  <h3>Data deletion</h3>
+  <p>Email <a href="mailto:{{ support_email }}">{{ support_email }}</a> to request deletion of your tenant record and all stored games. Cancellation through <code>/billing</code> stops all polling immediately and deletes data after 30 days.</p>
+
+  <h3>Contact</h3>
+  <p><a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+</div>
+{% endblock %}
