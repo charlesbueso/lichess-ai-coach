@@ -21,6 +21,26 @@ def _ts_to_dt(ts) -> dt.datetime | None:
     return dt.datetime.fromtimestamp(int(ts), tz=dt.timezone.utc)
 
 
+def _to_plain(obj: Any) -> Any:
+    """Recursively convert a Stripe SDK object (or container) to plain Python.
+
+    Stripe's ``StripeObject`` is dict-like (iterating yields keys) but does not
+    expose ``.get()`` and the recursive ``to_dict_recursive`` helper is private
+    in newer SDK versions. We convert by walking keys.
+    """
+    # StripeObject lives at stripe._stripe_object in modern SDKs; duck-type via keys().
+    if hasattr(obj, "keys") and hasattr(obj, "__getitem__") and not isinstance(obj, dict):
+        try:
+            return {k: _to_plain(obj[k]) for k in obj.keys()}
+        except Exception:
+            pass
+    if isinstance(obj, dict):
+        return {k: _to_plain(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_to_plain(v) for v in obj]
+    return obj
+
+
 # --- public API ----------------------------------------------------------
 
 async def create_checkout_session() -> str:
@@ -43,7 +63,7 @@ def _create_checkout_session_sync() -> str:
 
 async def retrieve_session(session_id: str) -> dict[str, Any]:
     sess = await asyncio.to_thread(stripe.checkout.Session.retrieve, session_id)
-    return sess.to_dict_recursive()
+    return _to_plain(sess)
 
 
 async def create_billing_portal_url(customer_id: str) -> str:
@@ -62,7 +82,7 @@ def verify_webhook(payload: bytes, sig_header: str) -> dict:
         sig_header=sig_header,
         secret=app_config.STRIPE_WEBHOOK_SECRET,
     )
-    return event.to_dict_recursive()
+    return _to_plain(event)
 
 
 def map_subscription_status(stripe_status: str) -> str:
