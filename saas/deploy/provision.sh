@@ -50,9 +50,9 @@ SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
 SQL
 
-echo "==> Cloning app (private branch). Override REPO_URL/BRANCH if needed."
+echo "==> Cloning app. Override REPO_URL/BRANCH if needed."
 REPO_URL="${REPO_URL:-https://github.com/charlesbueso/lichess-ai-coach.git}"
-BRANCH="${BRANCH:-saas}"
+BRANCH="${BRANCH:-main}"
 if [ ! -d "$APP_DIR/.git" ]; then
   sudo -u "$APP_USER" git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
 else

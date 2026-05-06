@@ -3,8 +3,9 @@
 This is your end-to-end runbook to ship the Discord SaaS to production today.
 Order matters: complete each section before moving on.
 
-> Do **not** push this file (or anything under `saas/`) to a public branch.
-> See [pre-push-hook](deploy/pre-push-hook) — install it before your first push.
+> The SaaS layer is open source and lives on `main` under `saas/`. Anyone can
+> self-host; the moat is the hosted convenience + the Stripe/Discord credentials,
+> not the code.
 
 ---
 
@@ -23,22 +24,18 @@ Have these tabs open / installed:
 
 ---
 
-## 1. Create the private `saas` branch (already done ✓)
+## 1. Repo layout (already done ✓)
 
-The branch `saas` already exists in this repo. From now on, all SaaS code lives there.
+The SaaS code lives on `main` under `saas/`. The OSS single-tenant entry point
+(`main.py`, `storage.py`, `config.py`) stays at the repo root for self-hosters.
 
 ```bash
-# Install the leak-prevention hook
-cp saas/deploy/pre-push-hook .git/hooks/pre-push
-chmod +x .git/hooks/pre-push   # Windows: skip chmod
+git checkout main
+git pull
 ```
 
-On GitHub:
-1. **Settings → Branches → Add rule** for `saas`:
-   - Restrict pushes to: only you.
-   - Require status checks: optional.
-   - Block force pushes from collaborators.
-2. (Optional) Make the repo private temporarily, push the `saas` branch, then make it public again — `main` is OSS-clean (no SaaS code).
+> Optional: protect `main` on GitHub (Settings → Branches) to prevent force
+> pushes / deletions. For a solo OSS project, allowing force pushes is fine.
 
 ---
 
@@ -90,22 +87,21 @@ On the droplet (as root):
 ```bash
 # 1. Pull just the provision script first (the rest comes via git in the script).
 curl -fsSL -o provision.sh \
-    https://raw.githubusercontent.com/<your-gh>/lichess-ai-coach/saas/saas/deploy/provision.sh
-# (If your saas branch is private, scp it instead from your laptop.)
+    https://raw.githubusercontent.com/<your-gh>/lichess-ai-coach/main/saas/deploy/provision.sh
 
 # 2. Run it. DOMAIN must match the domain you bought.
 DOMAIN=chesscoach.gg \
-REPO_URL=git@github.com:<your-gh>/lichess-ai-coach.git \
-BRANCH=saas \
+REPO_URL=https://github.com/<your-gh>/lichess-ai-coach.git \
+BRANCH=main \
 bash provision.sh
 ```
 
-> If your repo is private, set up a deploy key on GitHub first:
+> Public repo → HTTPS clone works without keys. If you ever switch to a private
+> fork, use a deploy key:
 > ```bash
 > ssh-keygen -t ed25519 -f ~/.ssh/coach_deploy -N ''
 > cat ~/.ssh/coach_deploy.pub   # paste into GitHub → Repo Settings → Deploy keys
-> # Then on the droplet:
-> sudo -u coach git clone git@github.com:<you>/lichess-ai-coach.git /opt/lichess-ai-coach
+> # Then re-run provision.sh with REPO_URL=git@github.com:<you>/lichess-ai-coach.git
 > ```
 
 The script:
@@ -271,7 +267,7 @@ sudo journalctl -u lichess-coach-saas --since "1 hour ago"
 # Restart after config / code changes
 sudo systemctl restart lichess-coach-saas
 
-# Update code from saas branch
+# Update code from main branch
 cd /opt/lichess-ai-coach
 sudo -u coach git pull
 sudo -u coach .venv/bin/pip install -r saas/requirements.txt

@@ -12,6 +12,7 @@ Tiny Python service that watches your Lichess games, asks Groq for human-like co
 - [config.py](config.py) — env loader
 - [requirements.txt](requirements.txt)
 - [.env.example](.env.example)
+- [saas/](saas/) — optional multi-tenant Discord SaaS layer (Postgres + Stripe + FastAPI). See [saas/DEPLOY-SAAS.md](saas/DEPLOY-SAAS.md) to self-host the hosted version.
 
 ## Setup
 
