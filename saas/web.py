@@ -40,17 +40,17 @@ def _ctx(request: Request, **extra) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request):
-    return templates.TemplateResponse("landing.html", _ctx(request))
+    return templates.TemplateResponse(request, "landing.html", _ctx(request))
 
 
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    return templates.TemplateResponse("privacy.html", _ctx(request))
+    return templates.TemplateResponse(request, "privacy.html", _ctx(request))
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    return templates.TemplateResponse("terms.html", _ctx(request))
+    return templates.TemplateResponse(request, "terms.html", _ctx(request))
 
 
 @app.get("/healthz")
@@ -110,7 +110,7 @@ async def connect(request: Request, session_id: Optional[str] = None):
     )
     install = app_config.install_url(state=token)
     return templates.TemplateResponse(
-        "connect.html",
+        request, "connect.html",
         _ctx(request, install_url=install, email=email),
     )
 
@@ -124,7 +124,7 @@ async def discord_callback(request: Request, code: Optional[str] = None,
                            error: Optional[str] = None):
     if error:
         return templates.TemplateResponse(
-            "error.html",
+            request, "error.html",
             _ctx(request, message=f"Discord said: {error}. You can retry from the email we sent."),
             status_code=400,
         )
@@ -134,7 +134,7 @@ async def discord_callback(request: Request, code: Optional[str] = None,
     pending = await db.consume_pending_install(state)
     if not pending:
         return templates.TemplateResponse(
-            "error.html",
+            request, "error.html",
             _ctx(request, message="This install link has expired or was already used. "
                                   "Open the original email link, or contact support."),
             status_code=410,
@@ -171,7 +171,7 @@ async def discord_callback(request: Request, code: Optional[str] = None,
     )
     if not resolved_guild_id:
         return templates.TemplateResponse(
-            "error.html",
+            request, "error.html",
             _ctx(request, message="Couldn't determine which Discord server you installed into. "
                                   "Try again from the success page."),
             status_code=400,
@@ -201,7 +201,7 @@ async def discord_callback(request: Request, code: Optional[str] = None,
     )
     if not tenant:
         return templates.TemplateResponse(
-            "error.html",
+            request, "error.html",
             _ctx(request, message="Could not bind the install to your subscription. Please contact support."),
             status_code=500,
         )
@@ -211,7 +211,7 @@ async def discord_callback(request: Request, code: Optional[str] = None,
         await _dm_setup_instructions(installer_user_id, tenant)
 
     return templates.TemplateResponse(
-        "success.html",
+        request, "success.html",
         _ctx(request, guild_id=resolved_guild_id),
     )
 
