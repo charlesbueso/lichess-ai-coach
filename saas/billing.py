@@ -90,12 +90,12 @@ async def find_latest_session_id_for_email(email: str) -> str | None:
 
 
 def _find_latest_session_id_for_email_sync(email: str) -> str | None:
-    customers = stripe.Customer.list(email=email, limit=10).get("data") or []
+    customers = stripe.Customer.list(email=email, limit=10).data or []
     latest_id: str | None = None
     latest_ts = -1
     for c in customers:
         cid = c.get("id") if isinstance(c, dict) else c["id"]
-        sessions = stripe.checkout.Session.list(customer=cid, limit=5).get("data") or []
+        sessions = stripe.checkout.Session.list(customer=cid, limit=5).data or []
         for s in sessions:
             s = _to_plain(s)
             if s.get("payment_status") not in ("paid", "no_payment_required"):

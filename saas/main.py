@@ -21,6 +21,22 @@ logging.basicConfig(
 )
 
 
+def _sentry_before_send(event, hint):
+    # Drop benign asyncio.CancelledError noise from uvicorn lifespan shutdown.
+    exc_info = hint.get("exc_info") if hint else None
+    if exc_info:
+        exc_type = exc_info[0]
+        if exc_type is not None and issubclass(exc_type, (asyncio.CancelledError, GeneratorExit)):
+            return None
+    if event.get("logger") in ("uvicorn.error", "uvicorn.lifespan"):
+        # Lifespan cancellation surfaces here as logger=uvicorn.error with a CancelledError trace.
+        values = (event.get("exception") or {}).get("values") or []
+        for v in values:
+            if v.get("type") in ("CancelledError", "GeneratorExit"):
+                return None
+    return event
+
+
 def _init_sentry():
     if not app_config.SENTRY_DSN:
         return
@@ -30,6 +46,7 @@ def _init_sentry():
             dsn=app_config.SENTRY_DSN,
             traces_sample_rate=0.1,
             profiles_sample_rate=0.0,
+            before_send=_sentry_before_send,
         )
         log.info("Sentry initialised")
     except Exception:
