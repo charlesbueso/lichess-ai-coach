@@ -129,20 +129,13 @@ async def connect(request: Request, session_id: Optional[str] = None):
     )
     install = app_config.install_url(state=token)
 
-    # Best-effort: also email the permanent /connect link so the user has a
-    # durable copy. The webhook handler does this too; sending again here is
-    # cheap insurance for the case where the webhook is delayed/missed.
-    email_sent = False
-    if email:
-        from saas import email as mailer
-        try:
-            email_sent = await mailer.send_install_link(email, session_id)
-        except Exception:
-            log.exception("send_install_link failed for %s", email)
+    # The Stripe `checkout.session.completed` webhook handler is responsible
+    # for emailing the install link. We deliberately don't send a second copy
+    # here — that would double-mail every customer.
 
     return templates.TemplateResponse(
         request, "connect.html",
-        _ctx(request, install_url=install, email=email, email_sent=email_sent),
+        _ctx(request, install_url=install, email=email),
     )
 
 

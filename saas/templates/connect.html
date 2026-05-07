@@ -3,10 +3,8 @@
 <div class="panel featured">
   <h2 style="margin-top: 0;">Payment confirmed. One step left.</h2>
   <p class="muted">
-    {% if email_sent %}
-      We emailed a permanent copy of this link to <code>{{ email }}</code>.
-    {% elif email %}
-      Bookmark this page — a copy will also be emailed to <code>{{ email }}</code>.
+    {% if email %}
+      A permanent copy of this link is on its way to <code>{{ email }}</code>.
     {% endif %}
     Click below to install the bot into one of your Discord servers.
   </p>
