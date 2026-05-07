@@ -181,7 +181,9 @@ async def analyze_game(
         "- If two notations look like the same move (one starts with a piece letter, "
         "the other is 4 lowercase chars / digits), pick the SAN form.\n\n"
         + "Return JSON with EXACTLY these keys:\n"
-        '  "headline": one short punchy line (max 90 chars) — no markdown.\n'
+        '  "headline": one short punchy creative title (max 90 chars) — no markdown. '
+        'Be original and witty: channel a chess commentator, use dramatic flair, wordplay, or a memorable phrase that captures HOW the game unfolded (e.g. result, opening, blunder, comeback). '
+        'Avoid generic templates like "Tough loss in X" or "Win with Y". Each headline should feel unique.\n'
         '  "summary": 2-3 sentences on how the game went for the player.\n'
         '  "opening_comment": 1-2 sentences about the opening choice and resulting structure. '
         "Mention an actual move from the table if relevant.\n"

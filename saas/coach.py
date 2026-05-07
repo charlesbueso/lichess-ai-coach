@@ -121,7 +121,8 @@ async def post_game_blog(
     w  = raw_summary.get("white") or {}
     bk = raw_summary.get("black") or {}
     opening = (raw_summary.get("opening") or {}).get("name") or "Unknown opening"
-    when = dt.datetime.utcfromtimestamp(created_at_ms / 1000).strftime("%Y-%m-%d %H:%M UTC")
+    _CST = dt.timezone(dt.timedelta(hours=-6))
+    when = dt.datetime.fromtimestamp(created_at_ms / 1000, tz=_CST).strftime("%Y-%m-%d %H:%M CST")
     speed = raw_summary.get("speed") or "?"
 
     headline = sections.get("headline") or f"{w.get('name')} vs {bk.get('name')}"
