@@ -247,7 +247,7 @@ they appreciate a heads-up.
   > I'm running a small commercial Discord bot (`Lichess Coach`) that pulls
   > each subscriber's public games via `/api/games/user/{username}` once every
   > 10 minutes. Expected steady-state: well under 1 req/s globally.
-  > User-Agent: `lichess-ai-coach/1.0 (+https://chesscoach.gg; you@chesscoach.gg)`.
+  > User-Agent: `lichess-ai-coach/1.0 (+https://chessbrain.coach; voxcentra@gmail.com)`.
   >
   > Please let me know if you'd like me to throttle further or if there's
   > anything else I should be aware of.

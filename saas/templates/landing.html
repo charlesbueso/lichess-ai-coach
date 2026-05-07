@@ -1,42 +1,157 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="panel">
-  <h2 style="margin-top: 0;">A faceless AI chess coach in your Discord.</h2>
-  <p class="muted">
-    Connect your Lichess account once. Every game you play gets posted as a
-    blog-style breakdown right inside your own Discord server — opening,
-    critical moment, endgame, strengths, and concrete improvements.
-    Ask follow-up questions per game with <code>/ask</code>.
+
+<section class="panel featured hero">
+  <img class="logo" src="/static/chessbrain-logo.png" alt="Chess Brain">
+  <span class="hero-tagline">AI Chess Brain · For Discord</span>
+  <h1>A Chess Brain for Every Game.</h1>
+  <p class="sub">
+    Chess Brain dissects every Lichess game you play — engine-verified blunders,
+    opening missteps, endgame breakdowns — and delivers a full coached analysis
+    straight to your Discord. Private by design. Open source. $5/mo.
   </p>
-
-  <ul>
-    <li>📥 Auto-imports new Lichess games within minutes</li>
-    <li>🎯 Engine-verified critical moments (Stockfish 18)</li>
-    <li>🤖 Per-game Q&amp;A — &ldquo;Why was move 17 bad?&rdquo;</li>
-    <li>🪝 Installs with one click into your existing Discord server</li>
-  </ul>
-
-  <div class="row" style="margin-top: 20px;">
-    <a class="btn" href="/checkout"
+  <div class="row">
+    <a class="btn large" href="/checkout"
        onclick="if(window.posthog){posthog.capture('checkout_started');}">
-      Start 7-day free trial — $5/mo
+      Start 7-day free trial
     </a>
-    <a class="btn secondary" href="https://github.com/charlesbueso/lichess-ai-coach"
+    <a class="btn secondary large" href="https://github.com/charlesbueso/lichess-ai-coach"
        target="_blank" rel="noreferrer">View source</a>
   </div>
-  <p class="muted" style="margin-top: 16px; font-size: 13px;">
-    Card required, cancel any time. No bot-server provisioning, no Lichess API
-    token of your own — install in any server you can manage.
+  <p class="muted" style="margin-top: 18px; font-size: 13px;">
+    Card required, cancel any time. No bot-server provisioning, no Lichess
+    token of your own — install in any server you manage.
   </p>
-</div>
+</section>
 
-<div class="panel">
-  <h3 style="margin-top: 0;">How it works</h3>
-  <ol>
-    <li>Subscribe (Stripe Checkout, 7-day trial).</li>
+<section class="panel">
+  <h2>What the Brain finds</h2>
+  <p class="muted" style="margin-top: -6px;">
+    Four things Chess Brain does automatically, after every game.
+  </p>
+  <div class="feature-grid">
+    <div class="feature">
+      <span class="tag">Auto-import</span>
+      <h3>Reads every game you finish</h3>
+      <p>Polls your public Lichess games every 10 minutes. No manual uploads, no PGN dragging — the brain is always watching.</p>
+    </div>
+    <div class="feature">
+      <span class="tag">Engine-verified</span>
+      <h3>Stockfish 18 thinks it through first</h3>
+      <p>Critical moments are found by the engine, not guessed. The AI only writes its analysis after the numbers check out.</p>
+    </div>
+    <div class="feature">
+      <span class="tag">Conversational</span>
+      <h3>Ask the brain anything</h3>
+      <p>"Why was move 17 bad?" "What should I have played?" <code>/ask</code> keeps the full game in context so answers are always specific.</p>
+    </div>
+    <div class="feature">
+      <span class="tag">One click</span>
+      <h3>Lives inside your Discord</h3>
+      <p>Stripe → Add to Discord → <code>/setup</code>. No tokens, no servers, no sysadmin. The brain moves in immediately.</p>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>The brain at work</h2>
+  <p class="muted" style="margin-top: -6px;">A look at what shows up in your channel after every game.</p>
+  <div class="gif-strip">
+    <!-- TODO: replace placeholder with <img src="CDN_URL_BANNER" alt="Chess Brain banner in Discord"> -->
+    <figure>
+      <div class="placeholder-gif">Banner GIF — coached blog post in Discord</div>
+      <figcaption>The blog-style breakdown posted automatically after each game.</figcaption>
+    </figure>
+    <!-- TODO: replace placeholder with <img src="CDN_URL_BOARD" alt="/board ASCII rendering"> -->
+    <figure>
+      <div class="placeholder-gif">GIF — <code>/board</code> position with the critical move highlighted</div>
+      <figcaption>The exact moment the engine flagged, rendered inline.</figcaption>
+    </figure>
+    <!-- TODO: replace placeholder with <img src="CDN_URL_ASK" alt="/ask follow-up Q&A"> -->
+    <figure>
+      <div class="placeholder-gif">GIF — follow-up Q&amp;A with <code>/ask</code></div>
+      <figcaption>Ask anything about the game; the coach answers in context.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li>Subscribe via Stripe Checkout (7-day free trial).</li>
     <li>Click <strong>Add to Discord</strong> on the next page and pick your server.</li>
     <li>In your server, run <code>/setup lichess:&lt;username&gt; channel:#chess</code>.</li>
-    <li>Play on Lichess. Your next game shows up as a coached blog post.</li>
+    <li>Play on Lichess. Your next game arrives as a coached blog post.</li>
   </ol>
-</div>
+</section>
+
+<section class="panel center">
+  <h2 style="margin-top: 0;">Pricing</h2>
+  <div class="pricing-card">
+    <span class="hero-tagline">Single tier · No upsells</span>
+    <div class="price">$5<small> / month</small></div>
+    <p class="muted" style="margin: 0;">7-day free trial · cancel any time</p>
+    <ul>
+      <li>Up to 20 games analyzed per day</li>
+      <li>Stockfish 18 engine verification</li>
+      <li>Per-game <code>/ask</code> follow-ups</li>
+      <li>One Discord server per subscription</li>
+      <li>Billed via Stripe — manage with <code>/billing</code></li>
+    </ul>
+    <a class="btn large" href="/checkout"
+       onclick="if(window.posthog){posthog.capture('checkout_started');}">
+      Start 7-day free trial
+    </a>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Frequently asked</h2>
+  <div class="faq">
+    <details>
+      <summary>Will Lichess ban me for using this?</summary>
+      <p>
+        No. We use Lichess's public games API with a polite <code>User-Agent</code>
+        and stay well under their rate limits. Lichess explicitly allows this kind
+        of read-only commercial use; we've notified their team as a courtesy.
+      </p>
+    </details>
+    <details>
+      <summary>Is this cheating?</summary>
+      <p>
+        No. Chess Brain only analyzes <em>completed</em> games. It never assists
+        during play, doesn't connect to your client, and never sees your live
+        position. Use it the same way you'd use a coach reviewing your games
+        afterward.
+      </p>
+    </details>
+    <details>
+      <summary>Can I cancel any time?</summary>
+      <p>
+        Yes. Run <code>/billing</code> in your server to open Stripe's customer
+        portal — cancel, update card, or download invoices in two clicks. No
+        retention emails, no friction.
+      </p>
+    </details>
+    <details>
+      <summary>What do you store about my games?</summary>
+      <p>
+        The minimum required to post analysis: your Lichess username, game IDs
+        we've already coached (so we don't repeat ourselves), and the analysis
+        text we publish to your channel. Full PGNs are pulled from Lichess on
+        demand and not retained. See <a href="/privacy">Privacy</a> for specifics.
+      </p>
+    </details>
+    <details>
+      <summary>Does it track my stats or compare me to other players?</summary>
+      <p>
+        No. Chess Brain only knows about <em>your</em> games, inside <em>your</em> server.
+        There are no leaderboards, no rating curves stored, no benchmarks against
+        other subscribers. The whole point is a private conversation between you
+        and the engine — no social pressure, no surveillance, just honest coaching.
+      </p>
+    </details>
+  </div>
+</section>
+
 {% endblock %}

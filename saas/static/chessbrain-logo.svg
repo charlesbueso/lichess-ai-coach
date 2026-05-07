@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600"
+     role="img" aria-label="Chess Brain logo">
+  <title>Chess Brain</title>
+  <desc>A pink brain with a white-and-black king chess piece overlaid on the right.</desc>
+  <defs>
+    <style>
+      .brain-fill   { fill: #FF5FA7; }
+      .brain-stroke { fill: none; stroke: #A50256; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+      .brain-fold   { fill: none; stroke: #A50256; stroke-width: 9;  stroke-linecap: round; stroke-linejoin: round; }
+      .king-fill    { fill: #FFFFFF; }
+      .king-outline { fill: #000000; }
+    </style>
+  </defs>
+
+  <!-- ─────────── Brain ─────────── -->
+  <g>
+    <!-- Brain silhouette (stylised, two-hemisphere shape) -->
+    <path class="brain-fill"
+          d="M150 200
+             c-10 -55 35 -100 95 -98
+             c10 -22 38 -36 70 -32
+             c30 -38 92 -42 128 -8
+             c50 -2 88 36 84 86
+             c30 22 36 64 12 92
+             c14 38 -10 78 -50 84
+             c-6 30 -36 50 -68 46
+             c-12 22 -42 34 -72 28
+             c-12 22 -44 30 -72 22
+             c-32 6 -64 -10 -74 -38
+             c-36 -2 -64 -32 -62 -68
+             c-30 -16 -42 -54 -22 -82
+             c-18 -22 -10 -56 18 -68
+             c-2 -20 8 -38 28 -44 z"/>
+    <!-- Brain outline -->
+    <path class="brain-stroke"
+          d="M150 200
+             c-10 -55 35 -100 95 -98
+             c10 -22 38 -36 70 -32
+             c30 -38 92 -42 128 -8
+             c50 -2 88 36 84 86
+             c30 22 36 64 12 92
+             c14 38 -10 78 -50 84
+             c-6 30 -36 50 -68 46
+             c-12 22 -42 34 -72 28
+             c-12 22 -44 30 -72 22
+             c-32 6 -64 -10 -74 -38
+             c-36 -2 -64 -32 -62 -68
+             c-30 -16 -42 -54 -22 -82
+             c-18 -22 -10 -56 18 -68
+             c-2 -20 8 -38 28 -44 z"/>
+
+    <!-- Brain folds / sulci -->
+    <g class="brain-fold">
+      <path d="M180 180 q40 -30 80 -10 q30 16 30 50"/>
+      <path d="M150 250 q40 -10 70 14 q22 18 12 46"/>
+      <path d="M130 320 q40 -8 64 18 q20 22 6 50"/>
+      <path d="M170 400 q40 -4 60 16"/>
+      <path d="M260 460 q24 -14 40 0"/>
+      <path d="M340 360 q-30 -10 -36 -40 q-4 -22 18 -36"/>
+      <path d="M360 280 q-26 -12 -22 -40 q4 -18 28 -22"/>
+      <path d="M410 220 q-30 0 -32 -28"/>
+      <path d="M470 250 q-22 -8 -22 -34"/>
+    </g>
+  </g>
+
+  <!-- ─────────── King chess piece ─────────── -->
+  <g transform="translate(0 0)">
+    <!-- Black outline (drawn first, larger) -->
+    <path class="king-outline"
+          d="M380 60
+             h22 v26 h26 v22 h-26 v34
+             c40 22 60 64 50 110
+             c-6 26 -22 48 -42 64
+             l16 14
+             v18
+             h-12
+             v22 h60 v26 h-60
+             v18
+             h70 v36 h-70
+             v32
+             h-44
+             v-32
+             h-70 v-36 h70
+             v-18
+             h-60 v-26 h60
+             v-22
+             h-12
+             v-18
+             l16 -14
+             c-20 -16 -36 -38 -42 -64
+             c-10 -46 10 -88 50 -110
+             v-34 h-26 v-22 h26 z"/>
+    <!-- White inner fill -->
+    <path class="king-fill"
+          d="M386 72
+             h10 v26 h26 v10 h-26 v44
+             c-2 4 -10 8 -16 10
+             c-30 16 -46 50 -38 84
+             c4 22 18 40 38 54
+             l10 8 v6
+             h-30 v22 h60 v6
+             h-60 v6 h60
+             v-6
+             h60 v-6 h-60
+             v-22 h60 v-6
+             h-30 v-6
+             l10 -8
+             c20 -14 34 -32 38 -54
+             c8 -34 -8 -68 -38 -84
+             c-6 -2 -14 -6 -16 -10
+             v-44 h-26 v-10 h26 v-26 h10 z" />
+  </g>
+</svg>
