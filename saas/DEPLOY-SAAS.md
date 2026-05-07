@@ -87,11 +87,11 @@ On the droplet (as root):
 ```bash
 # 1. Pull just the provision script first (the rest comes via git in the script).
 curl -fsSL -o provision.sh \
-    https://raw.githubusercontent.com/<your-gh>/lichess-ai-coach/main/saas/deploy/provision.sh
+    https://raw.githubusercontent.com/charlesbueso/lichess-ai-coach/main/saas/deploy/provision.sh
 
 # 2. Run it. DOMAIN must match the domain you bought.
-DOMAIN=chesscoach.gg \
-REPO_URL=https://github.com/<your-gh>/lichess-ai-coach.git \
+DOMAIN=chessbrain.coach \
+REPO_URL=https://github.com/charlesbueso/lichess-ai-coach.git \
 BRANCH=main \
 bash provision.sh
 ```
@@ -124,10 +124,10 @@ You'll fill `/etc/coach.env` with values from these accounts. Open them in tabs.
 1. [Discord Developer Portal](https://discord.com/developers/applications) → **New Application**. Name: `Lichess Coach`.
 2. **General Information**:
    - App icon: upload a chess-y SVG/PNG.
-   - **Terms of Service URL**: `https://chesscoach.gg/terms`
-   - **Privacy Policy URL**: `https://chesscoach.gg/privacy`
+   - **Terms of Service URL**: `https://chessbrain.coach/terms`
+   - **Privacy Policy URL**: `https://chessbrain.coach/privacy`
 3. **OAuth2 → General**:
-   - **Redirects** → add `https://chesscoach.gg/discord/callback`. Save.
+   - **Redirects** → add `https://chessbrain.coach/discord/callback`. Save.
 4. **Bot**:
    - **Reset Token** → copy the token. Save it for `DISCORD_TOKEN`.
    - **Privileged Gateway Intents**: leave **all OFF** (we don't need Message Content).
@@ -145,7 +145,7 @@ You'll fill `/etc/coach.env` with values from these accounts. Open them in tabs.
    - Copy the **Price ID** (`price_...`) → `STRIPE_PRICE_ID`.
 3. **Developers → API keys** → **Reveal live secret key** → copy → `STRIPE_SECRET_KEY`.
 4. **Developers → Webhooks → Add endpoint**:
-   - URL: `https://chesscoach.gg/stripe/webhook`
+   - URL: `https://chessbrain.coach/stripe/webhook`
    - Events to send (Select events):
      - `checkout.session.completed`
      - `customer.subscription.created`

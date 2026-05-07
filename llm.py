@@ -406,6 +406,18 @@ async def answer_question(
         "- 'worst move' / 'biggest mistake' / 'what should I have played' → CRITICAL MOMENT block.\n"
         "- 'best move' / 'strongest move' / 'best move I played' → USER'S BEST PLAYED MOVE block. "
         "That block already has the definitive answer; just explain why that specific move was good.\n\n"
+        "ANSWER STYLE — VERY IMPORTANT:\n"
+        "- Never answer in a single sentence. A bare 'The best move you played was Nf6.' is FORBIDDEN.\n"
+        "- Always give **3–6 sentences** (or short bullet list) covering: (a) the move and the "
+        "move number with SAN, (b) the concrete tactical/positional reason it was strong or "
+        "weak — name the squares, pieces, threats, plans, or pawn structure involved, "
+        "(c) what the position demanded and how the move addressed it, and (d) one practical "
+        "takeaway the user can apply in future games.\n"
+        "- If the question is about a mistake, also state the engine's alternative (from the "
+        "CRITICAL MOMENT block) and the eval swing in pawns.\n"
+        "- Quote the exact move number and SAN every time, e.g. `12...Nf6`.\n"
+        "- Do not pad with generic chess clichés ('chess is about strategy'); every sentence "
+        "must reference the actual position.\n\n"
         "NOTATION: SAN only (Nf3, Be2, O-O). Never UCI (g1f3)."
     )
 

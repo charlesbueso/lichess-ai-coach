@@ -144,11 +144,24 @@ async def cmd_setup(inter: discord.Interaction, lichess: str, channel: discord.T
         discord_channel_id=channel.id,
     )
     await inter.followup.send(
-        f"Connected ✓\n"
-        f"• Lichess: **{lichess}**\n"
-        f"• Channel: {channel.mention}\n\n"
-        f"Play a rated/casual game and the analysis will appear within "
-        f"{app_config.POLL_INTERVAL_MINUTES} minutes.",
+        f"**Connected ✓**\n"
+        f"• Lichess username: **{lichess}**\n"
+        f"• Analyses post in: {channel.mention}\n"
+        f"• Polling cadence: every **{app_config.POLL_INTERVAL_MINUTES} minutes**\n\n"
+        f"**What happens next**\n"
+        f"1. Play any rated/casual game on Lichess and **finish it** "
+        f"(resign, mate, or draw — aborted games are skipped).\n"
+        f"2. Within {app_config.POLL_INTERVAL_MINUTES} min the bot posts an "
+        f"analysis embed in {channel.mention} and opens a **thread** under it.\n"
+        f"3. Inside that thread, just type `/ask question:<your question>` — no "
+        f"need to provide a game id, the thread is already linked to the game.\n\n"
+        f"**Useful commands** (run `/help` any time)\n"
+        f"• `/game` — replay the most recent analysis here.\n"
+        f"• `/game game_id:<id>` — replay a specific game (id is in the post footer).\n"
+        f"• `/ask question:... [game_id:...]` — follow-up Q&A about a game.\n"
+        f"• `/setchannel channel:#new` — move the analysis feed.\n"
+        f"• `/billing` — manage your subscription.\n\n"
+        f"_Heads up: only the installer or a server admin can change setup or billing._",
         ephemeral=True,
     )
 
@@ -175,38 +188,42 @@ async def cmd_setchannel(inter: discord.Interaction, channel: discord.TextChanne
     await inter.response.send_message(f"Channel updated → {channel.mention}", ephemeral=True)
 
 
-# ---------- /last ---------------------------------------------------------
-
-@tree.command(name="last", description="Replay the most recently analyzed game.")
-async def cmd_last(inter: discord.Interaction):
-    tenant = await _need_active_tenant(inter)
-    if not tenant:
-        return
-    g = await db.get_last_game(tenant["id"])
-    if not g:
-        await inter.response.send_message("No games stored yet.", ephemeral=True)
-        return
-    await inter.response.defer(thinking=True)
-    await coach.post_game_blog(
-        http(), inter.channel,
-        g["raw_json"], g["sections"] or {}, g["key_moments"] or {},
-        g["pgn"], g["game_id"], int(g["created_at_ms"]),
-    )
-    await inter.followup.send("Replayed ✓", ephemeral=True)
-
-
 # ---------- /game ---------------------------------------------------------
 
-@tree.command(name="game", description="Replay a stored game by id.")
-@app_commands.describe(game_id="Lichess game id (8 chars).")
-async def cmd_game(inter: discord.Interaction, game_id: str):
+@tree.command(
+    name="game",
+    description="Replay a previously-analyzed game (latest by default).",
+)
+@app_commands.describe(
+    game_id=(
+        "Lichess game id (8 chars). Find it in the post footer or the URL: "
+        "lichess.org/<game_id>. Omit to replay your most recent analysis."
+    ),
+)
+async def cmd_game(inter: discord.Interaction, game_id: Optional[str] = None):
     tenant = await _need_active_tenant(inter)
     if not tenant:
         return
-    g = await db.get_game(tenant["id"], game_id)
-    if not g:
-        await inter.response.send_message(f"No stored analysis for `{game_id}`.", ephemeral=True)
-        return
+    if game_id:
+        g = await db.get_game(tenant["id"], game_id)
+        if not g:
+            await inter.response.send_message(
+                f"No stored analysis for `{game_id}`. Game ids are 8 characters "
+                f"and are shown in the **🆔 Game ID** footer of every analysis post "
+                f"(also at the end of the Lichess URL, e.g. `lichess.org/abc12345`).",
+                ephemeral=True,
+            )
+            return
+    else:
+        g = await db.get_last_game(tenant["id"])
+        if not g:
+            await inter.response.send_message(
+                "No games stored yet — play a game on Lichess and one will be "
+                "analyzed automatically within "
+                f"{app_config.POLL_INTERVAL_MINUTES} minutes.",
+                ephemeral=True,
+            )
+            return
     await inter.response.defer(thinking=True)
     await coach.post_game_blog(
         http(), inter.channel,
@@ -236,8 +253,10 @@ async def cmd_ask(inter: discord.Interaction, question: str, game_id: Optional[s
 
     if not g:
         await inter.response.send_message(
-            "Couldn't find a stored game. Provide `game_id:` or run `/ask` inside a "
-            "game thread.",
+            "Couldn't find a stored game.\n"
+            "• Run this **inside the auto-created thread** under an analysis post (no `game_id` needed), or\n"
+            "• Pass `game_id:<id>` — find it in the **🆔 Game ID** footer of the analysis post, "
+            "or at the end of the Lichess URL (`lichess.org/<game_id>`).",
             ephemeral=True,
         )
         return
@@ -331,16 +350,27 @@ async def cmd_billing(inter: discord.Interaction):
 @tree.command(name="help", description="Show what the Lichess Coach bot can do.")
 async def cmd_help(inter: discord.Interaction):
     text = (
-        "**Lichess AI Coach**\n"
-        "• `/setup lichess channel` — connect your Lichess username and target channel.\n"
-        "• `/setchannel channel` — change the target channel.\n"
-        "• `/last` — replay the most recent analyzed game.\n"
-        "• `/game game_id` — replay any stored game.\n"
-        "• `/ask question [game_id]` — ask a question about a game (works inside the game thread).\n"
-        "• `/board game_id move` — show a static board at a given full-move number.\n"
-        "• `/billing` — manage your subscription (admins only).\n"
-        f"\nLimits: {app_config.GAMES_PER_DAY_PER_TENANT} games analyzed/day, "
-        f"{app_config.ASKS_PER_GAME} questions per game."
+        "**Lichess AI Coach — quick guide**\n\n"
+        "**Setup (admins, one time)**\n"
+        "1. Subscribe at " + app_config.BASE_URL + " and authorize the bot in your server.\n"
+        "2. Run `/setup lichess:<your_username> channel:#some-channel`.\n"
+        "3. Play any game on Lichess and finish it — analysis posts automatically "
+        f"within {app_config.POLL_INTERVAL_MINUTES} minutes.\n\n"
+        "**Daily commands**\n"
+        "• `/game` — replay your most recent analysis here.\n"
+        "• `/game game_id:<id>` — replay a specific game by id.\n"
+        "• `/ask question:<your question>` — Q&A about a game. Run it **inside the "
+        "thread** auto-created under each analysis (no id needed). From elsewhere, "
+        "pass `game_id:<id>`.\n"
+        "• `/board game_id:<id> move:<n>` — show the board after full-move `n`.\n"
+        "• `/setchannel channel:#new` — move the analysis feed (admins).\n"
+        "• `/billing` — manage your subscription (admins).\n\n"
+        "**Where do I find a game id?**\n"
+        "It's the 8-character code at the end of every Lichess URL "
+        "(`lichess.org/abc12345`) and is also printed in the **🆔 Game ID** footer "
+        "of every analysis post.\n\n"
+        f"**Limits:** {app_config.GAMES_PER_DAY_PER_TENANT} games analyzed/day, "
+        f"{app_config.ASKS_PER_GAME} `/ask` questions per game."
     )
     await inter.response.send_message(text, ephemeral=True)
 

@@ -204,6 +204,30 @@ async def post_game_blog(
             callout + sections.get("midgame_comment", ""), img, fname,
         )
 
+        # Bonus: render the engine's recommended line as a second GIF so the
+        # user can SEE what they should have played, not just read the SAN.
+        pre_fen = mg.get("pre_fen")
+        cont = mg.get("engine_continuation") or []
+        best = mg.get("best_san")
+        if pre_fen and cont and local_gif.is_available():
+            try:
+                alt_gif = await asyncio.to_thread(
+                    local_gif.render_variation,
+                    pre_fen, cont, orient, 360, 1000, 2500, 6,
+                )
+            except Exception:
+                log.exception("Variation GIF render failed")
+                alt_gif = None
+            if alt_gif:
+                eng_eval = board_mod.fmt_eval(mg.get("engine_eval"))
+                alt_text = (
+                    f"_Engine recommends:_ **{best or '?'}** (eval {eng_eval}). "
+                    f"Continuation: `{' '.join(cont[:6])}`"
+                )
+                await _send_section(
+                    target, "🤖 Engine line", alt_text, alt_gif, "engine_line.gif",
+                )
+
     # --- Endgame
     if eg and eg.get("fen"):
         eg_ply = eg.get("ply") or plies_total
@@ -225,7 +249,13 @@ async def post_game_blog(
         tail_parts.append("### 💡 Improvements\n" + "\n".join(f"- {i}" for i in sections["improvements"]))
     if sections.get("style_note"):
         tail_parts.append(f"### 🎨 Style\n{sections['style_note']}")
-    tail_parts.append(f"_Game id: `{game_id}` · Use `/ask` in this thread for follow-ups._")
+    tail_parts.append(
+        f"### 🆔 Game ID\n"
+        f"`{game_id}` — view on Lichess: <https://lichess.org/{game_id}>\n"
+        f"Use this id with `/ask question:<your question> game_id:{game_id}` "
+        f"or `/board game_id:{game_id} move:<n>`.\n"
+        f"_(Tip: inside this thread you can just use `/ask` without a game id.)_"
+    )
     await _send_long(target, "\n\n".join(tail_parts))
 
     return thread_id

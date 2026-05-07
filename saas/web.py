@@ -223,10 +223,22 @@ async def _dm_setup_instructions(user_id: int, tenant: dict) -> None:
         user = _bot.get_user(user_id) or await _bot.fetch_user(user_id)
         await user.send(
             f"Welcome to {app_config.APP_NAME}! 🎉\n\n"
-            f"Your subscription is active (status: **{tenant['status']}**).\n"
-            f"Next: in your server, run\n"
-            f"`/setup lichess:<your_lichess_username> channel:#some-channel`\n\n"
-            f"Manage billing any time with `/billing`.\n"
+            f"Your subscription is active (status: **{tenant['status']}**).\n\n"
+            f"**Next step — connect your Lichess account**\n"
+            f"In your server, run this slash command:\n"
+            f"```\n/setup lichess:<your_lichess_username> channel:#some-channel\n```\n"
+            f"_e.g._ `/setup lichess:DrNykterstein channel:#chess-coach`\n\n"
+            f"Tip: when you start typing `/setup` Discord will autocomplete; "
+            f"`channel:` accepts a `#channel` mention.\n\n"
+            f"After that, **just play games on Lichess** — finished games are "
+            f"analyzed automatically every "
+            f"{app_config.POLL_INTERVAL_MINUTES} minutes and posted in the "
+            f"channel you picked.\n\n"
+            f"Useful commands once set up:\n"
+            f"• `/help` — full guide\n"
+            f"• `/game` — replay your latest analysis\n"
+            f"• `/ask question:...` — Q&A inside an analysis thread\n"
+            f"• `/billing` — manage your subscription\n\n"
             f"Questions? {app_config.SUPPORT_EMAIL}"
         )
     except Exception:
