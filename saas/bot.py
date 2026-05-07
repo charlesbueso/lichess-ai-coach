@@ -10,8 +10,11 @@ import aiohttp
 import discord
 from discord import app_commands
 
+import asyncio
+
 import board as board_mod
 import lichess as lichess_mod
+import local_gif
 from saas import app_config, coach, db
 
 log = logging.getLogger("coach.bot")
@@ -293,7 +296,10 @@ async def cmd_ask(inter: discord.Interaction, question: str, game_id: Optional[s
 
 # ---------- /board --------------------------------------------------------
 
-@tree.command(name="board", description="Show the board after a given full-move number.")
+@tree.command(
+    name="board",
+    description="Animated GIF window: 5 moves before to 5 moves after the requested full-move.",
+)
 @app_commands.describe(game_id="Game id (8 chars).", move="Full-move number (1+).")
 async def cmd_board(inter: discord.Interaction, game_id: str, move: int):
     tenant = await _need_active_tenant(inter)
@@ -308,7 +314,6 @@ async def cmd_board(inter: discord.Interaction, game_id: str, move: int):
             ephemeral=True,
         )
         return
-    game_id = gid
     if move < 1:
         await inter.response.send_message("Move number must be >= 1.", ephemeral=True)
         return
@@ -316,20 +321,67 @@ async def cmd_board(inter: discord.Interaction, game_id: str, move: int):
     if not game_obj:
         await inter.response.send_message("Couldn't parse PGN.", ephemeral=True)
         return
-    target_ply = min(2 * move, board_mod.total_plies(game_obj))
-    pos = board_mod.position_at_ply(game_obj, target_ply)
-    if not pos:
-        await inter.response.send_message("Couldn't find that position.", ephemeral=True)
+
+    total_plies = board_mod.total_plies(game_obj)
+    if total_plies < 1:
+        await inter.response.send_message("Game has no moves.", ephemeral=True)
         return
+
+    # Window: 5 full-moves before through 5 after the target move (clamped to game).
+    # White's Nth move = ply 2N-1; end of full-move N (after black) = ply 2N.
+    win_lo = max(1, move - 5)
+    win_hi = move + 5
+    start_ply = max(1, 2 * win_lo - 1)
+    end_ply = min(total_plies, 2 * win_hi)
+    if end_ply < start_ply:
+        end_ply = start_ply
+
     user_color = (g.get("key_moments") or {}).get("user_color") or "white"
     await inter.response.defer(thinking=True)
-    img = await board_mod.fetch_board_image(http(), pos["fen"], pos.get("last_move"), color=user_color)
-    if not img:
-        await inter.followup.send("Couldn't fetch board image.", ephemeral=True)
-        return
+
+    gif_bytes = None
+    if local_gif.is_available():
+        try:
+            loop = asyncio.get_running_loop()
+            gif_bytes = await loop.run_in_executor(
+                None,
+                local_gif.render_slice,
+                game_obj,
+                start_ply,
+                end_ply,
+                user_color,
+                360,    # size_px
+                900,    # frame_ms
+                2500,   # final_hold_ms
+            )
+        except Exception:
+            log.exception("render_slice failed")
+
+    if not gif_bytes:
+        # Fallback: single static board at requested move.
+        target_ply = min(2 * move, total_plies)
+        pos = board_mod.position_at_ply(game_obj, target_ply)
+        if not pos:
+            await inter.followup.send("Couldn't render that position.", ephemeral=True)
+            return
+        gif_bytes = await board_mod.fetch_board_image(
+            http(), pos["fen"], pos.get("last_move"), color=user_color,
+        )
+        if not gif_bytes:
+            await inter.followup.send("Couldn't fetch board image.", ephemeral=True)
+            return
+
+    actual_lo = (start_ply + 1) // 2
+    actual_hi = (end_ply + 1) // 2
     await inter.followup.send(
-        content=f"`{game_id}` — after move {move} ({pos['side']} just moved)",
-        file=discord.File(io.BytesIO(img), filename=f"{game_id}_m{move}.gif"),
+        content=(
+            f"`{gid}` \u2014 moves **{actual_lo}\u2013{actual_hi}** "
+            f"(target: move {move})"
+        ),
+        file=discord.File(
+            io.BytesIO(gif_bytes),
+            filename=f"{gid}_m{move}_window.gif",
+        ),
     )
 
 
@@ -372,7 +424,7 @@ async def cmd_billing(inter: discord.Interaction):
 @tree.command(name="help", description="Show what the Lichess Coach bot can do.")
 async def cmd_help(inter: discord.Interaction):
     text = (
-        "**Lichess AI Coach — quick guide**\n\n"
+        "**Chess Brain, the Lichess AI Coach — quick guide**\n\n"
         "**Setup (admins, one time)**\n"
         "1. Subscribe at " + app_config.BASE_URL + " and authorize the bot in your server.\n"
         "2. Run `/setup lichess:<your_username> channel:#some-channel`.\n"
