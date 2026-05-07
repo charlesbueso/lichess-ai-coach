@@ -173,6 +173,31 @@ You'll fill `/etc/coach.env` with values from these accounts. Open them in tabs.
 2. **Project settings → API keys** → copy the **Project API key** → `POSTHOG_KEY`.
 3. (US cloud is the default; matches `POSTHOG_HOST` in `.env`.)
 
+### 5f. Resend (transactional email)
+
+Used to email the install/recovery link after Stripe checkout. Without it, the
+webhook still works but users have no durable copy of their install URL.
+
+1. [resend.com](https://resend.com/) → **Domains → Add Domain** → `matra.live`
+   (or whichever domain you've verified — the From address must live on a
+   verified domain).
+2. Add the SPF/DKIM/DMARC TXT records it shows at your DNS host. Wait for
+   "Verified" (usually a few minutes).
+3. **API Keys → Create** with *Sending access* scoped to your domain. Copy the
+   `re_…` value → `RESEND_API_KEY`.
+4. Set `EMAIL_FROM=Lichess AI Coach <noreply@matra.live>` (must be on the
+   verified domain) and `EMAIL_REPLY_TO=support@chesscoach.gg`.
+5. Smoke test from the droplet once `.env` is filled:
+   ```bash
+   sudo -u coach bash -lc 'cd /opt/coach && .venv/bin/python -c "
+   import asyncio; from saas import email
+   asyncio.run(email.send_install_link(\"you@example.com\", \"cs_test_dummy\"))
+   "'
+   ```
+   You should receive an email whose button links to
+   `https://chesscoach.gg/connect?session_id=cs_test_dummy` (it'll 400 when
+   clicked — that's expected for a fake session).
+
 ---
 
 ## 6. Fill `/etc/coach.env` and start

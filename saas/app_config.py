@@ -56,6 +56,12 @@ POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://us.i.posthog.com")
 APP_NAME    = os.getenv("APP_NAME", "Lichess AI Coach")
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "voxcentra@gmail.com")
 
+# --- Email (Resend) ---
+# If RESEND_API_KEY is unset, all email sends become no-ops (handy for dev).
+RESEND_API_KEY = os.getenv("RESEND_API_KEY") or None
+EMAIL_FROM     = os.getenv("EMAIL_FROM", f"{APP_NAME} <noreply@matra.live>")
+EMAIL_REPLY_TO = os.getenv("EMAIL_REPLY_TO", SUPPORT_EMAIL)
+
 
 # --- Discord OAuth ---
 def install_url(state: str) -> str:

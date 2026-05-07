@@ -6,12 +6,17 @@ from pathlib import Path
 from typing import Optional
 
 import aiohttp
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from saas import app_config, billing, db
+from saas.rate_limit import (
+    CHECKOUT_PER_IP,
+    RECOVER_PER_EMAIL,
+    RECOVER_PER_IP,
+)
 
 log = logging.getLogger("coach.web")
 
@@ -34,6 +39,18 @@ def _ctx(request: Request, **extra) -> dict:
         "posthog_host": app_config.POSTHOG_HOST,
         **extra,
     }
+
+
+def _client_ip(request: Request) -> str:
+    """Resolve the client IP, honoring Caddy's X-Forwarded-For / X-Real-IP."""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        # First entry is the original client per RFC 7239.
+        return xff.split(",")[0].strip()
+    xri = request.headers.get("x-real-ip")
+    if xri:
+        return xri.strip()
+    return request.client.host if request.client else "unknown"
 
 
 # ---------------- public pages ----------------
@@ -61,16 +78,18 @@ async def healthz():
 # ---------------- checkout ----------------
 
 @app.post("/checkout")
-async def checkout_post():
-    return await _checkout()
+async def checkout_post(request: Request):
+    return await _checkout(request)
 
 
 @app.get("/checkout")
-async def checkout_get():
-    return await _checkout()
+async def checkout_get(request: Request):
+    return await _checkout(request)
 
 
-async def _checkout():
+async def _checkout(request: Request):
+    if not await CHECKOUT_PER_IP.allow(_client_ip(request)):
+        raise HTTPException(status_code=429, detail="Too many checkout attempts. Try again later.")
     try:
         url = await billing.create_checkout_session()
     except Exception:
@@ -109,9 +128,63 @@ async def connect(request: Request, session_id: Optional[str] = None):
         install_email=email,
     )
     install = app_config.install_url(state=token)
+
+    # Best-effort: also email the permanent /connect link so the user has a
+    # durable copy. The webhook handler does this too; sending again here is
+    # cheap insurance for the case where the webhook is delayed/missed.
+    email_sent = False
+    if email:
+        from saas import email as mailer
+        try:
+            email_sent = await mailer.send_install_link(email, session_id)
+        except Exception:
+            log.exception("send_install_link failed for %s", email)
+
     return templates.TemplateResponse(
         request, "connect.html",
-        _ctx(request, install_url=install, email=email),
+        _ctx(request, install_url=install, email=email, email_sent=email_sent),
+    )
+
+
+# ---------------- /recover (lost the install link) ----------------
+
+@app.get("/recover", response_class=HTMLResponse)
+async def recover_get(request: Request):
+    return templates.TemplateResponse(request, "recover.html", _ctx(request))
+
+
+@app.post("/recover", response_class=HTMLResponse)
+async def recover_post(request: Request, email: str = Form(...)):
+    # Always show the same confirmation, regardless of whether we found a
+    # matching customer — prevents email enumeration.
+    addr = (email or "").strip().lower()
+
+    # Per-IP limit: protects Stripe API quota and stops scrapers cold.
+    ip = _client_ip(request)
+    if not await RECOVER_PER_IP.allow(ip):
+        log.warning("recover: per-IP rate limit hit for %s", ip)
+        raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
+
+    # Per-email limit: protects real customers from being mail-bombed via
+    # repeated submissions. Applied BEFORE Stripe lookup so we don't even
+    # confirm the address exists when the limit is hit.
+    email_allowed = bool(addr) and await RECOVER_PER_EMAIL.allow(f"email:{addr}")
+
+    if addr and email_allowed:
+        try:
+            session_id = await billing.find_latest_session_id_for_email(addr)
+        except Exception:
+            log.exception("Stripe lookup failed for %s during /recover", addr)
+            session_id = None
+        if session_id:
+            from saas import email as mailer
+            try:
+                await mailer.send_install_link(addr, session_id)
+            except Exception:
+                log.exception("send_install_link failed in /recover for %s", addr)
+    return templates.TemplateResponse(
+        request, "recover.html",
+        _ctx(request, sent=True, email=addr),
     )
 
 

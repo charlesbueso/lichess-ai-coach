@@ -3,7 +3,11 @@
 <div class="panel featured">
   <h2 style="margin-top: 0;">Payment confirmed. One step left.</h2>
   <p class="muted">
-    {% if email %}We sent a backup of this link to <code>{{ email }}</code>.{% endif %}
+    {% if email_sent %}
+      We emailed a permanent copy of this link to <code>{{ email }}</code>.
+    {% elif email %}
+      Bookmark this page — a copy will also be emailed to <code>{{ email }}</code>.
+    {% endif %}
     Click below to install the bot into one of your Discord servers.
   </p>
   <a class="btn" href="{{ install_url }}"
@@ -14,6 +18,10 @@
     You'll be asked to choose which server to install into. Pick one where you
     have <strong>Manage Server</strong> permission. The link is single-use and
     expires in 24 hours.
+  </p>
+  <p class="muted" style="margin-top: 12px; font-size: 13px;">
+    Lost this page later? Visit <a href="{{ base_url }}/recover">{{ base_url }}/recover</a>
+    and we'll re-send the install link to your subscription email.
   </p>
 </div>
 {% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2 style="margin-top: 0;">Recover your install link</h2>
+
+  {% if sent %}
+    <p>
+      If <code>{{ email }}</code> matches a paid subscription, we just sent the
+      install link to that address. Check your inbox (and spam folder).
+    </p>
+    <p class="muted" style="font-size: 13px;">
+      Still nothing after a few minutes? Email
+      <a href="mailto:{{ support_email }}">{{ support_email }}</a> and we'll
+      sort it out manually.
+    </p>
+  {% else %}
+    <p class="muted">
+      Lost the install page or your one-time link expired? Enter the email you
+      used at checkout and we'll re-send a fresh install link.
+    </p>
+    <form method="post" action="/recover" style="display:flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+      <input type="email" name="email" required placeholder="you@example.com"
+             style="flex: 1; min-width: 220px; padding: 10px 12px; border-radius: 8px;
+                    border: 1px solid #ccc; font-size: 14px;">
+      <button class="btn" type="submit">Send install link</button>
+    </form>
+    <p class="muted" style="font-size: 13px; margin-top: 12px;">
+      We'll only send mail to addresses with an active or recent subscription.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

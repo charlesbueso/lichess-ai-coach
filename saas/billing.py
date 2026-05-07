@@ -80,6 +80,33 @@ async def create_billing_portal_url(customer_id: str) -> str:
     return sess.url
 
 
+async def find_latest_session_id_for_email(email: str) -> str | None:
+    """Look up the most recent Checkout Session for a customer by email.
+
+    Used by the /recover flow to re-send the install link. Returns the
+    session_id (cs_...) or None if nothing matches.
+    """
+    return await asyncio.to_thread(_find_latest_session_id_for_email_sync, email)
+
+
+def _find_latest_session_id_for_email_sync(email: str) -> str | None:
+    customers = stripe.Customer.list(email=email, limit=10).get("data") or []
+    latest_id: str | None = None
+    latest_ts = -1
+    for c in customers:
+        cid = c.get("id") if isinstance(c, dict) else c["id"]
+        sessions = stripe.checkout.Session.list(customer=cid, limit=5).get("data") or []
+        for s in sessions:
+            s = _to_plain(s)
+            if s.get("payment_status") not in ("paid", "no_payment_required"):
+                continue
+            created = int(s.get("created") or 0)
+            if created > latest_ts:
+                latest_ts = created
+                latest_id = s.get("id")
+    return latest_id
+
+
 def verify_webhook(payload: bytes, sig_header: str) -> dict:
     """Verify Stripe webhook signature, return the parsed event as a plain dict."""
     event = stripe.Webhook.construct_event(
@@ -116,6 +143,7 @@ async def handle_event(event: dict) -> None:
     if etype == "checkout.session.completed":
         customer_id = obj.get("customer")
         sub_id = obj.get("subscription")
+        session_id = obj.get("id")
         email = (obj.get("customer_details") or {}).get("email") or obj.get("customer_email")
         if customer_id:
             # We may not yet have full subscription details — mark pending; the
@@ -128,6 +156,13 @@ async def handle_event(event: dict) -> None:
                 trial_end=None,
                 install_email=email,
             )
+        # Email the permanent recovery link (best-effort; never fails the webhook).
+        if email and session_id:
+            from saas import email as mailer
+            try:
+                await mailer.send_install_link(email, session_id)
+            except Exception:
+                log.exception("send_install_link failed for %s", email)
 
     elif etype in ("customer.subscription.created",
                    "customer.subscription.updated",
