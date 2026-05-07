@@ -158,19 +158,37 @@ async def bind_discord_install(
     """Attach a Discord guild + installer to an existing tenant.
 
     Returns the updated row, or None if no tenant exists for that customer.
+
+    If the guild was previously bound to a different tenant (e.g. an old
+    test-mode customer, or a re-install after a cancelled subscription),
+    we transparently detach it from that tenant first so the unique
+    constraint on ``tenants.discord_guild_id`` doesn't blow up.
     """
     async with pool().acquire() as c:
-        r = await c.fetchrow(
-            """
-            UPDATE tenants
-               SET discord_guild_id          = $2,
-                   discord_installer_user_id = $3,
-                   updated_at                = now()
-             WHERE stripe_customer_id = $1
-             RETURNING *
-            """,
-            stripe_customer_id, guild_id, installer_user_id,
-        )
+        async with c.transaction():
+            # Detach this guild from any *other* tenant currently holding it.
+            await c.execute(
+                """
+                UPDATE tenants
+                   SET discord_guild_id          = NULL,
+                       discord_installer_user_id = NULL,
+                       updated_at                = now()
+                 WHERE discord_guild_id   = $1
+                   AND stripe_customer_id <> $2
+                """,
+                guild_id, stripe_customer_id,
+            )
+            r = await c.fetchrow(
+                """
+                UPDATE tenants
+                   SET discord_guild_id          = $2,
+                       discord_installer_user_id = $3,
+                       updated_at                = now()
+                 WHERE stripe_customer_id = $1
+                 RETURNING *
+                """,
+                stripe_customer_id, guild_id, installer_user_id,
+            )
     return _row_to_dict(r)
 
 
