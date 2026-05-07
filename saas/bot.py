@@ -17,6 +17,20 @@ from saas import app_config, coach, db
 log = logging.getLogger("coach.bot")
 
 
+def _normalize_game_id(raw: str) -> str:
+    """Lichess full ids are 12 chars (8 public + 4 player token); we store the 8-char public id.
+    Strip any URL prefix, whitespace, then take the first 8 chars.
+    """
+    s = (raw or "").strip()
+    if "/" in s:
+        s = s.rstrip("/").split("/")[-1]
+    # Drop query/fragment if pasted from URL
+    for sep in ("?", "#"):
+        if sep in s:
+            s = s.split(sep, 1)[0]
+    return s[:8]
+
+
 # Default intents — NO message content (slash commands only).
 def _intents() -> discord.Intents:
     intents = discord.Intents.default()
@@ -205,12 +219,14 @@ async def cmd_game(inter: discord.Interaction, game_id: Optional[str] = None):
     if not tenant:
         return
     if game_id:
-        g = await db.get_game(tenant["id"], game_id)
+        gid = _normalize_game_id(game_id)
+        g = await db.get_game(tenant["id"], gid)
         if not g:
             await inter.response.send_message(
-                f"No stored analysis for `{game_id}`. Game ids are 8 characters "
-                f"and are shown in the **🆔 Game ID** footer of every analysis post "
-                f"(also at the end of the Lichess URL, e.g. `lichess.org/abc12345`).",
+                f"No stored analysis for `{gid}`.\n"
+                f"• Only games **played after you ran `/setup`** are analyzed and stored.\n"
+                f"• Use the 8-char public id (the one in `lichess.org/<id>` URLs, or the **🆔 Game ID** "
+                f"footer of an analysis post).",
                 ephemeral=True,
             )
             return
@@ -247,7 +263,7 @@ async def cmd_ask(inter: discord.Interaction, question: str, game_id: Optional[s
 
     g = None
     if game_id:
-        g = await db.get_game(tenant["id"], game_id)
+        g = await db.get_game(tenant["id"], _normalize_game_id(game_id))
     elif isinstance(inter.channel, discord.Thread):
         g = await db.get_game_by_thread(tenant["id"], inter.channel.id)
 
@@ -283,10 +299,16 @@ async def cmd_board(inter: discord.Interaction, game_id: str, move: int):
     tenant = await _need_active_tenant(inter)
     if not tenant:
         return
-    g = await db.get_game(tenant["id"], game_id)
+    gid = _normalize_game_id(game_id)
+    g = await db.get_game(tenant["id"], gid)
     if not g:
-        await inter.response.send_message(f"No stored analysis for `{game_id}`.", ephemeral=True)
+        await inter.response.send_message(
+            f"No stored analysis for `{gid}`. Only games played after `/setup` are analyzed; "
+            f"use the 8-char public id from `lichess.org/<id>`.",
+            ephemeral=True,
+        )
         return
+    game_id = gid
     if move < 1:
         await inter.response.send_message("Move number must be >= 1.", ephemeral=True)
         return
