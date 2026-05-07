@@ -385,7 +385,7 @@ async def consume_ask_quota(tenant_id, game_id: str, cap: int) -> bool:
 async def create_pending_install(stripe_customer_id: str,
                                  stripe_subscription_id: Optional[str],
                                  install_email: Optional[str],
-                                 ttl_minutes: int = 30) -> str:
+                                 ttl_minutes: int = 60 * 24) -> str:
     token = secrets.token_urlsafe(32)
     expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=ttl_minutes)
     async with pool().acquire() as c:
