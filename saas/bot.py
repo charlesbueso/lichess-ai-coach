@@ -190,11 +190,14 @@ async def cmd_setup(inter: discord.Interaction, lichess: str, channel: discord.T
         await inter.followup.send(
             f"⚠️ I can't post in {channel.mention} yet — missing permissions:\n"
             + "\n".join(f"• {p}" for p in missing) + "\n\n"
-            "**Quick fix (server admin):** open the channel → ⚙️ → "
-            "**Permissions** → click ➕ → add the **Chess Brain** role → "
-            "enable the perms above → click **Save**. "
-            "Or pick a public channel where the bot already has access, then "
-            "re-run `/setup`.",
+            "**If this is a private channel:** open the channel → ⚙️ → "
+            "**Permissions** → **Members & Roles** tab → click ➕ → search "
+            "for **Chess Brain** and add it. Discord will grant the perms it "
+            "asked for at install time. Then re-run `/setup`.\n\n"
+            "**If it's a public channel** with role overrides hiding the bot: "
+            "add the **Chess Brain** role on that channel and enable the perms "
+            "above, or pick a different channel.\n\n"
+            "_Tip: a fresh public channel like #chess-coach Just Works._",
             ephemeral=True,
         )
         return
@@ -247,8 +250,11 @@ async def cmd_setchannel(inter: discord.Interaction, channel: discord.TextChanne
         await inter.response.send_message(
             f"⚠️ I can't post in {channel.mention} — missing permissions:\n"
             + "\n".join(f"• {p}" for p in missing) + "\n\n"
-            "Open the channel settings → Permissions → add the **Chess Brain** "
-            "role and enable the perms above. Then re-run this command.",
+            "**If this is a private channel:** open it → ⚙️ → **Permissions** "
+            "→ **Members & Roles** tab → click ➕ → search for **Chess Brain** "
+            "and add it. Then re-run this command.\n\n"
+            "**If it's public**, add the **Chess Brain** role on the channel "
+            "and enable the perms above — or pick a different channel.",
             ephemeral=True,
         )
         return

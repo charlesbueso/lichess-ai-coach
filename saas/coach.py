@@ -277,17 +277,19 @@ async def process_tenant(
 
     if last_ms == 0:
         # First poll after /setup. Look back 30 minutes so a game the user
-        # played between subscribing and finishing setup still gets picked up.
+        # played between subscribing and finishing setup still gets picked up
+        # IN THIS SAME PASS — don't make them wait another full poll cycle
+        # for their first analysis.
         # We don't backfill arbitrary history (would be expensive on a fresh
         # install with active accounts).
         baseline = int(time.time() * 1000) - 30 * 60 * 1000
         await db.update_last_game_ms(tenant_id, baseline)
+        last_ms = baseline
         log.info(
-            "[t=%s] baseline set with 30-min lookback; will pick up any "
-            "game finished in the last 30 minutes on the next pass",
+            "[t=%s] first poll: 30-min lookback baseline set; fetching "
+            "any games finished in that window now",
             tenant_id,
         )
-        return
 
     await LICHESS_BUCKET.acquire()
     try:
