@@ -65,13 +65,30 @@ EMAIL_REPLY_TO = os.getenv("EMAIL_REPLY_TO", SUPPORT_EMAIL)
 
 
 # --- Discord OAuth ---
+# Permissions bitfield for the install URL. Discord grants these to a server-
+# wide Chess Brain role at install time, so users don't need to grant per-channel
+# unless they install into a private channel with overrides.
+#
+# Includes:
+#   View Channel             (1 << 10)  =          1024
+#   Send Messages            (1 << 11)  =          2048
+#   Embed Links              (1 << 14)  =         16384
+#   Attach Files             (1 << 15)  =         32768   ← required for GIFs / boards
+#   Read Message History     (1 << 16)  =         65536
+#   Use Application Commands (1 << 31)  =    2147483648
+#   Create Public Threads    (1 << 35)  =   34359738368   ← required for /game blog threads
+#   Send Messages in Threads (1 << 38)  =  274877906944
+# Total                                 =  311385279488
+INSTALL_PERMISSIONS = "311385279488"
+
+
 def install_url(state: str) -> str:
     """Build the Discord 'Add to Server' OAuth URL."""
     from urllib.parse import urlencode
     qs = urlencode({
         "client_id": DISCORD_CLIENT_ID,
         "scope": "bot applications.commands",
-        "permissions": "274877991936",  # View Channel + Send Messages + Embed Links + Attach Files + Create Public Threads + Send Messages In Threads + Use Slash Commands
+        "permissions": INSTALL_PERMISSIONS,
         "redirect_uri": f"{BASE_URL}/discord/callback",
         "response_type": "code",
         "state": state,

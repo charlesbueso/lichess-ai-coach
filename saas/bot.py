@@ -111,6 +111,34 @@ async def _need_active_tenant(inter: discord.Interaction) -> Optional[dict]:
     return tenant
 
 
+# Permissions the bot needs in the analysis channel to post game embeds.
+_REQUIRED_CHANNEL_PERMS = {
+    "view_channel":             "View Channel",
+    "send_messages":            "Send Messages",
+    "embed_links":              "Embed Links",
+    "attach_files":             "Attach Files",
+    "read_message_history":     "Read Message History",
+    "create_public_threads":    "Create Public Threads",
+    "send_messages_in_threads": "Send Messages in Threads",
+}
+
+
+def _missing_channel_perms(channel: discord.TextChannel,
+                           bot_member: Optional[discord.Member]) -> list[str]:
+    """Return human-readable list of perms the bot is missing on `channel`.
+
+    Returns [] if the channel works. Returns the full list if we can't
+    determine (treat as failure-safe — better warn the user up front)."""
+    if bot_member is None:
+        return list(_REQUIRED_CHANNEL_PERMS.values())
+    perms = channel.permissions_for(bot_member)
+    missing: list[str] = []
+    for attr, label in _REQUIRED_CHANNEL_PERMS.items():
+        if not getattr(perms, attr, False):
+            missing.append(label)
+    return missing
+
+
 # ---------- /setup --------------------------------------------------------
 
 @tree.command(name="setup", description="Connect a Lichess username and target channel for analyses.")
@@ -155,6 +183,22 @@ async def cmd_setup(inter: discord.Interaction, lichess: str, channel: discord.T
         )
         return
 
+    # Verify the bot can actually post in the chosen channel before saving.
+    bot_member = inter.guild.me if inter.guild else None
+    missing = _missing_channel_perms(channel, bot_member)
+    if missing:
+        await inter.followup.send(
+            f"⚠️ I can't post in {channel.mention} yet — missing permissions:\n"
+            + "\n".join(f"• {p}" for p in missing) + "\n\n"
+            "**Quick fix (server admin):** open the channel → ⚙️ → "
+            "**Permissions** → click ➕ → add the **Chess Brain** role → "
+            "enable the perms above → click **Save**. "
+            "Or pick a public channel where the bot already has access, then "
+            "re-run `/setup`.",
+            ephemeral=True,
+        )
+        return
+
     await db.set_tenant_setup(
         guild_id=inter.guild_id,
         lichess_username=lichess,
@@ -194,6 +238,17 @@ async def cmd_setchannel(inter: discord.Interaction, channel: discord.TextChanne
     if not _is_admin_or_installer(inter, tenant):
         await inter.response.send_message(
             "Only the installer or a server admin can change the channel.",
+            ephemeral=True,
+        )
+        return
+    bot_member = inter.guild.me if inter.guild else None
+    missing = _missing_channel_perms(channel, bot_member)
+    if missing:
+        await inter.response.send_message(
+            f"⚠️ I can't post in {channel.mention} — missing permissions:\n"
+            + "\n".join(f"• {p}" for p in missing) + "\n\n"
+            "Open the channel settings → Permissions → add the **Chess Brain** "
+            "role and enable the perms above. Then re-run this command.",
             ephemeral=True,
         )
         return
