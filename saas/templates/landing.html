@@ -22,6 +22,7 @@
     Card required, cancel any time. No bot-server provisioning, no Lichess
     token of your own — install in any server you manage.
   </p>
+  <img class="hero-mascot" src="/static/mascot.png" alt="Chess Brain mascot">
 </section>
 
 <section class="panel">
@@ -57,19 +58,96 @@
   <h2>The brain at work</h2>
   <p class="muted" style="margin-top: -6px;">A look at what shows up in your channel after every game.</p>
   <div class="gif-strip">
-    <!-- TODO: replace placeholder with <img src="CDN_URL_BANNER" alt="Chess Brain banner in Discord"> -->
-    <figure>
-      <div class="placeholder-gif">Banner GIF — coached blog post in Discord</div>
+    <figure class="discord-card">
+      <div class="discord-mock">
+        <div class="d-row">
+          <div class="d-avatar bot" aria-hidden="true"></div>
+          <div>
+            <div>
+              <span class="d-author">Chess Brain</span>
+              <span class="d-bot-tag">APP</span>
+              <span class="d-time">Today at 2:14 PM</span>
+            </div>
+            <div class="d-embed">
+              <a class="d-embed-title" href="#" onclick="return false;">♛ A clever Caro-Kann exchange goes wrong on move 24</a>
+              <div class="d-embed-desc">
+                <strong>charlesbueso</strong> (1742) vs <strong>endgame_eli</strong> (1768) — <strong>0-1</strong><br>
+                <em>Blitz · Caro-Kann Defense, Exchange Variation · 2026-05-09 13:58 CST</em>
+              </div>
+              <div class="d-embed-field">
+                <div class="d-embed-field-name">Eval flow</div>
+                <div class="d-embed-field-val"><code>▁▂▂▃▃▄▅▅▆▇█▇▅▃▂▁</code></div>
+              </div>
+              <div class="d-embed-field">
+                <div class="d-embed-field-name">Summary</div>
+                <div class="d-embed-field-val">Solid until move 24, when Bxh3?? hung the bishop and let Black push c-pawn to victory. Activity over material was the lesson.</div>
+              </div>
+              <div class="d-embed-img" aria-hidden="true"></div>
+              <div class="d-embed-footer">Accuracy — White 78% · Black 91%</div>
+            </div>
+          </div>
+        </div>
+      </div>
       <figcaption>The blog-style breakdown posted automatically after each game.</figcaption>
     </figure>
-    <!-- TODO: replace placeholder with <img src="CDN_URL_BOARD" alt="/board ASCII rendering"> -->
-    <figure>
-      <div class="placeholder-gif">GIF — <code>/board</code> position with the critical move highlighted</div>
+
+    <figure class="discord-card">
+      <div class="discord-mock">
+        <div class="d-row">
+          <div class="d-avatar user" aria-hidden="true">C</div>
+          <div>
+            <div>
+              <span class="d-author">charlesbueso</span>
+              <span class="d-time">Today at 2:16 PM</span>
+            </div>
+            <div class="d-content"><span class="d-slash">/board</span> game_id:<code>aB3xK9pQ</code> move:<code>24</code></div>
+          </div>
+        </div>
+        <div class="d-row">
+          <div class="d-avatar bot" aria-hidden="true"></div>
+          <div>
+            <div>
+              <span class="d-author">Chess Brain</span>
+              <span class="d-bot-tag">APP</span>
+              <span class="d-time">Today at 2:16 PM</span>
+            </div>
+            <div class="d-content">Position after <strong>24. Bxh3??</strong> — the engine flags this as the critical moment.</div>
+            <div class="d-embed">
+              <a class="d-embed-title" href="#" onclick="return false;">⚔️ Midgame — Tactical blunder</a>
+              <div class="d-embed-desc"><em>Eval: <strong>+0.4 → -3.8</strong> (move 24)</em></div>
+              <div class="d-embed-img with-arrow" aria-hidden="true"></div>
+              <div class="d-embed-footer">Engine recommends <code>Rfd1</code> · continuation <code>Rfd1 Qc7 Nb5</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <figcaption>The exact moment the engine flagged, rendered inline.</figcaption>
     </figure>
-    <!-- TODO: replace placeholder with <img src="CDN_URL_ASK" alt="/ask follow-up Q&A"> -->
-    <figure>
-      <div class="placeholder-gif">GIF — follow-up Q&amp;A with <code>/ask</code></div>
+
+    <figure class="discord-card">
+      <div class="discord-mock">
+        <div class="d-row">
+          <div class="d-avatar user" aria-hidden="true">C</div>
+          <div>
+            <div>
+              <span class="d-author">charlesbueso</span>
+              <span class="d-time">Today at 2:18 PM</span>
+            </div>
+            <div class="d-content"><span class="d-slash">/ask</span> question:<code>why was Bxh3 bad? what should I have done?</code></div>
+          </div>
+        </div>
+        <div class="d-row">
+          <div class="d-avatar bot" aria-hidden="true"></div>
+          <div>
+            <div>
+              <span class="d-author">Chess Brain</span>
+              <span class="d-bot-tag">APP</span>
+              <span class="d-time">Today at 2:18 PM</span>
+            </div>
+            <div class="d-content">Bxh3 looked like a free pawn, but after <code>gxh3 Qxh3</code> Black's queen has no real follow-up — and you've handed back the bishop pair plus weakened the king. The engine prefers <strong>Rfd1</strong>: it doubles on the open file and keeps pressure on d6. The pawn on h3 wasn't going anywhere; activity over material was the lesson here.</div>
+          </div>
+        </div>
+      </div>
       <figcaption>Ask anything about the game; the coach answers in context.</figcaption>
     </figure>
   </div>

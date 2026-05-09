@@ -242,6 +242,145 @@
       background: var(--panel);
     }
 
+    /* Simulated Discord message cards (used in landing demo strip) */
+    .discord-mock {
+      --d-bg: #313338;
+      --d-bg-2: #2b2d31;
+      --d-fg: #dbdee1;
+      --d-muted: #949ba4;
+      --d-link: #00a8fc;
+      --d-accent: #5865f2;
+      --d-green: #23a55a;
+      --d-red:   #f23f43;
+      --d-embed-l: #A50256; /* Chess Brain magenta */
+      background: var(--d-bg);
+      color: var(--d-fg);
+      font-family: "gg sans", "Whitney", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 14px 16px;
+      text-align: left;
+    }
+    .discord-mock .d-row {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .discord-mock .d-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #1e1f22 center/70% no-repeat;
+      border: 1px solid #1a1b1e;
+      flex-shrink: 0;
+    }
+    .discord-mock .d-avatar.bot {
+      background-color: #A50256;
+      background-image: url("/static/mascot.png");
+      background-size: cover;
+      background-position: center;
+    }
+    .discord-mock .d-avatar.user {
+      background-color: #5865f2;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 15px;
+    }
+    .discord-mock .d-author {
+      font-weight: 600; color: #fff; margin-right: 6px;
+    }
+    .discord-mock .d-bot-tag {
+      display: inline-block;
+      background: var(--d-accent); color: #fff;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+      padding: 1px 5px; border-radius: 3px;
+      vertical-align: 2px; margin-right: 6px;
+    }
+    .discord-mock .d-time { color: var(--d-muted); font-size: 12px; }
+    .discord-mock .d-content { white-space: pre-wrap; word-wrap: break-word; color: var(--d-fg); }
+    .discord-mock code {
+      background: #1e1f22; border: 0;
+      color: #dbdee1; font-size: 85%;
+      padding: 1px 5px; border-radius: 3px;
+    }
+    .discord-mock .d-embed {
+      border-left: 4px solid var(--d-embed-l);
+      background: var(--d-bg-2);
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-top: 4px;
+      max-width: 520px;
+    }
+    .discord-mock .d-embed-title {
+      color: var(--d-link); font-weight: 600;
+      font-size: 15px; text-decoration: none;
+      display: block; margin-bottom: 4px;
+    }
+    .discord-mock .d-embed-desc { color: var(--d-fg); margin-bottom: 6px; }
+    .discord-mock .d-embed-field { margin-top: 8px; }
+    .discord-mock .d-embed-field-name { font-size: 13px; font-weight: 700; color: #fff; }
+    .discord-mock .d-embed-field-val  { font-size: 13px; color: var(--d-fg); }
+    .discord-mock .d-embed-img {
+      width: 100%; max-width: 360px; aspect-ratio: 1;
+      margin-top: 10px;
+      background:
+        linear-gradient(135deg, #769656 50%, #eeeed2 50%) /* chess board cue */;
+      background-size: 12.5% 12.5%;
+      background-image:
+        repeating-conic-gradient(#eeeed2 0% 25%, #769656 0% 50%);
+      background-size: 25% 25%;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .discord-mock .d-embed-img.with-arrow::after {
+      content: "♛";
+      position: absolute;
+      left: 38%; top: 30%;
+      font-size: 56px;
+      color: #1a1a1a;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.4);
+    }
+    .discord-mock .d-embed-img.with-arrow::before {
+      content: "";
+      position: absolute;
+      left: 36%; top: 28%;
+      width: 24%; height: 24%;
+      border: 3px solid #f23f43;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(242,63,67,0.3);
+    }
+    .discord-mock .d-embed-footer {
+      color: var(--d-muted); font-size: 12px; margin-top: 8px;
+    }
+    .discord-mock .d-slash {
+      display: inline-block;
+      background: rgba(88,101,242,0.15);
+      color: #c9cdfb;
+      padding: 0 4px; border-radius: 3px; font-weight: 500;
+    }
+    .gif-strip figure.discord-card {
+      border: 1px solid #1a1b1e;
+      background: var(--d-bg);
+    }
+    .gif-strip figure.discord-card figcaption {
+      background: var(--panel);
+      color: var(--muted);
+    }
+
+    /* mascot accents */
+    .hero-mascot {
+      width: 84px; height: 84px;
+      display: block;
+      margin: 14px auto 0;
+      filter: drop-shadow(0 2px 6px rgba(165,2,86,0.25));
+    }
+    .footer-mascot {
+      width: 56px; height: 56px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
     /* pricing */
     .pricing-card {
       max-width: 420px; margin: 24px auto 0;

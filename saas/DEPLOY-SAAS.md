@@ -186,7 +186,7 @@ webhook still works but users have no durable copy of their install URL.
 3. **API Keys → Create** with *Sending access* scoped to your domain. Copy the
    `re_…` value → `RESEND_API_KEY`.
 4. Set `EMAIL_FROM=Lichess AI Coach <noreply@matra.live>` (must be on the
-   verified domain) and `EMAIL_REPLY_TO=support@chesscoach.gg`.
+   verified domain) and `EMAIL_REPLY_TO=chessbrain.coach@gmail.com`.
 5. Smoke test from the droplet once `.env` is filled:
    ```bash
    sudo -u coach bash -lc 'cd /opt/coach && .venv/bin/python -c "
@@ -272,7 +272,7 @@ they appreciate a heads-up.
   > I'm running a small commercial Discord bot (`Lichess Coach`) that pulls
   > each subscriber's public games via `/api/games/user/{username}` once every
   > 10 minutes. Expected steady-state: well under 1 req/s globally.
-  > User-Agent: `lichess-ai-coach/1.0 (+https://chessbrain.coach; voxcentra@gmail.com)`.
+  > User-Agent: `lichess-ai-coach/1.0 (+https://chessbrain.coach; chessbrain.coach@gmail.com)`.
   >
   > Please let me know if you'd like me to throttle further or if there's
   > anything else I should be aware of.

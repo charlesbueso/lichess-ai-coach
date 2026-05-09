@@ -25,11 +25,12 @@ DISCORD_PUBLIC_KEY     = os.getenv("DISCORD_PUBLIC_KEY", "")  # only needed for 
 
 # --- Lichess (shared token) ---
 LICHESS_TOKEN  = os.getenv("LICHESS_TOKEN") or None
-LICHESS_CONTACT = os.getenv("LICHESS_CONTACT", "voxcentra@gmail.com")
+LICHESS_CONTACT = os.getenv("LICHESS_CONTACT", "chessbrain.coach@gmail.com")
 
 # --- LLM (Groq) ---
 GROQ_API_KEY = _req("GROQ_API_KEY")
-GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODELS  = os.getenv("GROQ_MODELS", "")
 
 # --- Stripe ---
 STRIPE_SECRET_KEY     = _req("STRIPE_SECRET_KEY")
@@ -54,7 +55,7 @@ POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://us.i.posthog.com")
 
 # --- Misc ---
 APP_NAME    = os.getenv("APP_NAME", "Lichess AI Coach")
-SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "voxcentra@gmail.com")
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "chessbrain.coach@gmail.com")
 
 # --- Email (Resend) ---
 # If RESEND_API_KEY is unset, all email sends become no-ops (handy for dev).

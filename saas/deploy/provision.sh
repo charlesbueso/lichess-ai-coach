@@ -101,7 +101,7 @@ POSTHOG_KEY=
 POSTHOG_HOST=https://us.i.posthog.com
 
 APP_NAME=Lichess AI Coach
-SUPPORT_EMAIL=support@$DOMAIN
+SUPPORT_EMAIL=chessbrain.coach@gmail.com
 
 LICHESS_USERNAME=__saas__
 DISCORD_CHANNEL_ID=0

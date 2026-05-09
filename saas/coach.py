@@ -312,7 +312,13 @@ async def process_tenant(
         gid = g.get("id")
         if not gid:
             continue
+        g_ms = int(g.get("createdAt", last_ms))
+
         if await db.has_game(tenant_id, gid):
+            # Already saved in a previous (possibly partially-failed) run.
+            # Advance the cursor anyway so we don't refetch this game forever.
+            log.info("[t=%s] game %s already in DB; advancing cursor", tenant_id, gid)
+            await db.update_last_game_ms(tenant_id, g_ms)
             continue
 
         # Quota: count this analysis attempt; skip if over cap.
@@ -322,15 +328,27 @@ async def process_tenant(
         if not under_cap:
             log.info("[t=%s] daily game quota hit; skipping rest", tenant_id)
             # Advance cursor so we don't reprocess these tomorrow.
-            await db.update_last_game_ms(tenant_id, int(g.get("createdAt", last_ms)))
+            await db.update_last_game_ms(tenant_id, g_ms)
             break
 
         try:
             await _analyze_and_post(http, channel, tenant, g)
-            await db.update_last_game_ms(tenant_id, int(g.get("createdAt", last_ms)))
+            await db.update_last_game_ms(tenant_id, g_ms)
+        except discord.Forbidden as e:
+            log.error(
+                "[t=%s] Discord refused post in channel %s (Missing Access / "
+                "permissions). Advancing cursor to skip game %s. "
+                "Fix: grant the bot View Channel, Send Messages, Embed Links, "
+                "Attach Files, Create Public Threads, and Send Messages in "
+                "Threads on that channel. Detail: %s",
+                tenant_id, tenant.get("discord_channel_id"), gid, e,
+            )
+            # Permission errors won't fix themselves on retry; advance so we
+            # don't burn LLM/engine cycles re-processing the same game.
+            await db.update_last_game_ms(tenant_id, g_ms)
         except Exception:
             log.exception("[t=%s] failed processing game %s", tenant_id, gid)
-            # Don't advance cursor on failure so we retry next cycle.
+            # Don't advance cursor on transient failure so we retry next cycle.
 
     await db.touch_poll(tenant_id)
 

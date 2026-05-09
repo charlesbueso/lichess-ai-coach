@@ -1,12 +1,113 @@
 """Groq LLM client. Uses OpenAI-compatible chat completions endpoint."""
 import aiohttp
+import asyncio
 import json
+import logging
 import re
 from typing import Optional
 
 import config
 
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+log = logging.getLogger("coach.llm")
+
+GROQ_BASE = "https://api.groq.com/openai/v1"
+GROQ_URL = f"{GROQ_BASE}/chat/completions"
+GROQ_MODELS_URL = f"{GROQ_BASE}/models"
+
+# Ordered preference list. Configure via GROQ_MODELS="a,b,c" to override.
+# We try config.GROQ_MODEL first, then fall through these on
+# model_decommissioned / model_not_found.
+_DEFAULT_PREFERENCES = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-70b-versatile",
+    "llama-3.1-8b-instant",
+    "llama-3.2-90b-text-preview",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it",
+]
+
+
+def _preference_list() -> list[str]:
+    raw = (getattr(config, "GROQ_MODELS", "") or "").strip()
+    if raw:
+        prefs = [m.strip() for m in raw.split(",") if m.strip()]
+    else:
+        prefs = list(_DEFAULT_PREFERENCES)
+    primary = (config.GROQ_MODEL or "").strip()
+    if primary and primary not in prefs:
+        prefs.insert(0, primary)
+    elif primary:
+        prefs.remove(primary)
+        prefs.insert(0, primary)
+    return prefs
+
+
+# Cached working model for this process. Updated on successful fallback so we
+# stop hammering a decommissioned model on every call.
+_active_model: Optional[str] = None
+_models_cache: tuple[float, set[str]] | None = None  # (expires_at_monotonic, ids)
+_fallback_lock = asyncio.Lock()
+
+
+async def _list_available_models(session: aiohttp.ClientSession) -> set[str]:
+    """Fetch the current set of model IDs Groq is serving. Cached for 5 min."""
+    global _models_cache
+    loop = asyncio.get_event_loop()
+    now = loop.time()
+    if _models_cache and _models_cache[0] > now:
+        return _models_cache[1]
+    headers = {"Authorization": f"Bearer {config.GROQ_API_KEY}"}
+    try:
+        async with session.get(GROQ_MODELS_URL, headers=headers, timeout=15) as r:
+            r.raise_for_status()
+            data = await r.json()
+    except Exception:
+        log.exception("Failed to list Groq models; using stale cache if any")
+        return _models_cache[1] if _models_cache else set()
+    ids = {m.get("id") for m in (data.get("data") or []) if m.get("id")}
+    # Filter to chat-capable when Groq exposes that hint (best-effort).
+    chat_ids: set[str] = set()
+    for m in data.get("data") or []:
+        mid = m.get("id")
+        if not mid:
+            continue
+        # Groq returns `active: true` for usable models.
+        if m.get("active") is False:
+            continue
+        chat_ids.add(mid)
+    chat_ids = chat_ids or ids
+    _models_cache = (now + 300, chat_ids)
+    return chat_ids
+
+
+async def _pick_fallback_model(session: aiohttp.ClientSession,
+                               failed: str) -> Optional[str]:
+    """Pick the next preferred model that Groq currently serves."""
+    available = await _list_available_models(session)
+    if not available:
+        return None
+    for cand in _preference_list():
+        if cand == failed:
+            continue
+        if cand in available:
+            return cand
+    # Last-ditch: any active model that mentions llama / mixtral / gemma.
+    for mid in sorted(available):
+        if any(t in mid.lower() for t in ("llama", "mixtral", "gemma")):
+            if mid != failed:
+                return mid
+    return None
+
+
+def _is_model_error(status: int, body: str) -> bool:
+    if status not in (400, 404):
+        return False
+    b = body.lower()
+    return any(t in b for t in (
+        "model_decommissioned", "model_not_found",
+        "decommissioned", "no longer supported", "does not exist",
+        "the model `", "invalid model",
+    ))
 
 
 async def _chat_messages(
@@ -17,25 +118,60 @@ async def _chat_messages(
     json_mode: bool = False,
     tools: Optional[list] = None,
 ) -> dict:
-    """Low-level: send a messages list to Groq, return the raw response dict."""
-    payload: dict = {
-        "model": config.GROQ_MODEL,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-    }
-    if json_mode:
-        payload["response_format"] = {"type": "json_object"}
-    if tools:
-        payload["tools"] = tools
-        payload["tool_choice"] = "auto"
+    """Low-level: send a messages list to Groq, return the raw response dict.
+
+    On a model-related 400/404, transparently fall back to the next preferred
+    model that Groq currently lists as active, cache it, and retry once.
+    """
+    global _active_model
     headers = {
         "Authorization": f"Bearer {config.GROQ_API_KEY}",
         "Content-Type": "application/json",
     }
-    async with session.post(GROQ_URL, headers=headers, json=payload, timeout=60) as r:
-        r.raise_for_status()
-        return await r.json()
+
+    def _build_payload(model: str) -> dict:
+        p: dict = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if json_mode:
+            p["response_format"] = {"type": "json_object"}
+        if tools:
+            p["tools"] = tools
+            p["tool_choice"] = "auto"
+        return p
+
+    model = _active_model or config.GROQ_MODEL
+    for attempt in range(2):
+        payload = _build_payload(model)
+        async with session.post(GROQ_URL, headers=headers, json=payload, timeout=60) as r:
+            if r.status < 400:
+                if _active_model != model:
+                    _active_model = model  # remember success
+                return await r.json()
+            body = await r.text()
+            if attempt == 0 and _is_model_error(r.status, body):
+                async with _fallback_lock:
+                    new_model = await _pick_fallback_model(session, model)
+                if new_model and new_model != model:
+                    log.warning(
+                        "Groq model %r rejected (%s). Falling back to %r. Detail: %s",
+                        model, r.status, new_model, body[:300],
+                    )
+                    _active_model = new_model
+                    model = new_model
+                    continue
+            raise aiohttp.ClientResponseError(
+                r.request_info,
+                r.history,
+                status=r.status,
+                message=f"Groq {r.status} (model={model}): {body[:600]}",
+                headers=r.headers,
+            )
+    # Unreachable; loop either returns or raises.
+    raise RuntimeError("Groq chat: exhausted retries without response")
 
 
 async def chat(

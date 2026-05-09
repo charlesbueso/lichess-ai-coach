@@ -16,7 +16,9 @@ LICHESS_USERNAME = _req("LICHESS_USERNAME")
 LICHESS_TOKEN = os.getenv("LICHESS_TOKEN") or None
 
 GROQ_API_KEY = _req("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+# Optional comma-separated fallback list. Empty => use built-in defaults.
+GROQ_MODELS = os.getenv("GROQ_MODELS", "")
 
 DISCORD_TOKEN = _req("DISCORD_TOKEN")
 DISCORD_CHANNEL_ID = int(_req("DISCORD_CHANNEL_ID"))
