@@ -320,34 +320,13 @@
     .discord-mock .d-embed-field-name { font-size: 13px; font-weight: 700; color: #fff; }
     .discord-mock .d-embed-field-val  { font-size: 13px; color: var(--d-fg); }
     .discord-mock .d-embed-img {
-      width: 100%; max-width: 360px; aspect-ratio: 1;
+      width: 100%; max-width: 360px;
+      aspect-ratio: 1;
       margin-top: 10px;
-      background:
-        linear-gradient(135deg, #769656 50%, #eeeed2 50%) /* chess board cue */;
-      background-size: 12.5% 12.5%;
-      background-image:
-        repeating-conic-gradient(#eeeed2 0% 25%, #769656 0% 50%);
-      background-size: 25% 25%;
+      display: block;
       border-radius: 4px;
-      position: relative;
-      overflow: hidden;
-    }
-    .discord-mock .d-embed-img.with-arrow::after {
-      content: "♛";
-      position: absolute;
-      left: 38%; top: 30%;
-      font-size: 56px;
-      color: #1a1a1a;
-      text-shadow: 0 2px 0 rgba(255,255,255,0.4);
-    }
-    .discord-mock .d-embed-img.with-arrow::before {
-      content: "";
-      position: absolute;
-      left: 36%; top: 28%;
-      width: 24%; height: 24%;
-      border: 3px solid #f23f43;
-      border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(242,63,67,0.3);
+      object-fit: contain;
+      background: #1e1f22;
     }
     .discord-mock .d-embed-footer {
       color: var(--d-muted); font-size: 12px; margin-top: 8px;
@@ -369,16 +348,60 @@
 
     /* mascot accents */
     .hero-mascot {
-      width: 84px; height: 84px;
+      width: 240px; height: 240px;
+      max-width: 60vw;
       display: block;
-      margin: 14px auto 0;
-      filter: drop-shadow(0 2px 6px rgba(165,2,86,0.25));
+      margin: 22px auto 4px;
+      filter: drop-shadow(0 6px 18px rgba(165,2,86,0.28));
+    }
+    @media (max-width: 540px) {
+      .hero-mascot { width: 180px; height: 180px; }
     }
     .footer-mascot {
       width: 56px; height: 56px;
       display: inline-block;
       vertical-align: middle;
       margin-right: 8px;
+    }
+
+    /* Discord-server "how to" mini-guide */
+    .server-guide {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .server-guide .step {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      background: var(--panel);
+      box-shadow: var(--shadow-sm);
+    }
+    .server-guide .step .num {
+      display: inline-block;
+      width: 24px; height: 24px; line-height: 24px; text-align: center;
+      border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-weight: 700; font-size: 13px;
+      margin-right: 8px;
+    }
+    .server-guide .step h4 {
+      display: inline; margin: 0; font-size: 16px;
+    }
+    .server-guide .step p {
+      margin: 8px 0 0; font-size: 14px; color: var(--muted);
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--bg-2);
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-top: 14px;
+    }
+    @media (max-width: 720px) {
+      .server-guide { grid-template-columns: 1fr; }
     }
 
     /* pricing */

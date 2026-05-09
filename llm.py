@@ -110,6 +110,29 @@ def _is_model_error(status: int, body: str) -> bool:
     ))
 
 
+def _is_json_validate_failed(status: int, body: str) -> bool:
+    return status == 400 and "json_validate_failed" in body.lower()
+
+
+def _synth_response_from_failed_generation(body: str) -> Optional[dict]:
+    """Groq returns the raw model output in `failed_generation` when strict
+    JSON mode rejects it. Try to recover the partial output so callers can
+    salvage it via `_extract_json`."""
+    try:
+        err = json.loads(body)
+        gen = err.get("error", {}).get("failed_generation")
+        if not isinstance(gen, str) or not gen.strip():
+            return None
+        return {
+            "choices": [
+                {"message": {"role": "assistant", "content": gen}}
+            ],
+            "_recovered_from": "failed_generation",
+        }
+    except Exception:
+        return None
+
+
 async def _chat_messages(
     session: aiohttp.ClientSession,
     messages: list,
@@ -122,6 +145,11 @@ async def _chat_messages(
 
     On a model-related 400/404, transparently fall back to the next preferred
     model that Groq currently lists as active, cache it, and retry once.
+
+    On a `json_validate_failed` 400, retry once without strict JSON mode (the
+    caller's `_extract_json` is tolerant). If that also fails, recover the
+    model's raw partial output from `failed_generation` so the caller's
+    extractor still gets a chance.
     """
     global _active_model
     headers = {
@@ -129,14 +157,14 @@ async def _chat_messages(
         "Content-Type": "application/json",
     }
 
-    def _build_payload(model: str) -> dict:
+    def _build_payload(model: str, *, force_json: bool) -> dict:
         p: dict = {
             "model": model,
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
-        if json_mode:
+        if force_json:
             p["response_format"] = {"type": "json_object"}
         if tools:
             p["tools"] = tools
@@ -144,15 +172,19 @@ async def _chat_messages(
         return p
 
     model = _active_model or config.GROQ_MODEL
-    for attempt in range(2):
-        payload = _build_payload(model)
+    use_json = json_mode
+    json_retry_used = False
+    for attempt in range(3):
+        payload = _build_payload(model, force_json=use_json)
         async with session.post(GROQ_URL, headers=headers, json=payload, timeout=60) as r:
             if r.status < 400:
                 if _active_model != model:
                     _active_model = model  # remember success
                 return await r.json()
             body = await r.text()
-            if attempt == 0 and _is_model_error(r.status, body):
+
+            # Model decommissioned / unknown — pick a fallback and retry once.
+            if not json_retry_used and _is_model_error(r.status, body):
                 async with _fallback_lock:
                     new_model = await _pick_fallback_model(session, model)
                 if new_model and new_model != model:
@@ -163,6 +195,28 @@ async def _chat_messages(
                     _active_model = new_model
                     model = new_model
                     continue
+
+            # Strict JSON mode failed — drop the constraint and retry once.
+            if use_json and not json_retry_used and _is_json_validate_failed(r.status, body):
+                log.warning(
+                    "Groq json_validate_failed on model %r; retrying without "
+                    "strict JSON mode. Detail: %s", model, body[:300],
+                )
+                use_json = False
+                json_retry_used = True
+                continue
+
+            # Last-ditch: recover the partial generation from the error body
+            # so callers using _extract_json can still salvage it.
+            if _is_json_validate_failed(r.status, body):
+                recovered = _synth_response_from_failed_generation(body)
+                if recovered:
+                    log.warning(
+                        "Groq rejected JSON twice; returning recovered "
+                        "failed_generation for tolerant parsing.",
+                    )
+                    return recovered
+
             raise aiohttp.ClientResponseError(
                 r.request_info,
                 r.history,
@@ -170,7 +224,6 @@ async def _chat_messages(
                 message=f"Groq {r.status} (model={model}): {body[:600]}",
                 headers=r.headers,
             )
-    # Unreachable; loop either returns or raises.
     raise RuntimeError("Groq chat: exhausted retries without response")
 
 
@@ -199,19 +252,68 @@ COACH_SYSTEM = (
 
 
 def _extract_json(text: str) -> dict:
-    """Best-effort: parse JSON, tolerating code fences / extra prose."""
-    text = text.strip()
+    """Best-effort: parse JSON, tolerating code fences / extra prose / common
+    malformations from instruction-tuned models (truncation, unquoted string
+    values, trailing commas)."""
+    text = (text or "").strip()
+    if not text:
+        return {}
+    # Strip code fences
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    # Fast path
     try:
         return json.loads(text)
     except Exception:
         pass
+    # Isolate the largest {...} block
     m = re.search(r"\{.*\}", text, re.S)
-    if m:
+    candidate = m.group(0) if m else text
+    # Try once as-is
+    try:
+        return json.loads(candidate)
+    except Exception:
+        pass
+    # Heuristic key-value extractor: scan for `"key": value-or-string-until-next-key-or-end`
+    # Works on outputs like:  "summary": ChessCharli faced ... "opening_comment": ...
+    out: dict = {}
+    # Build a list of (key, span_start) pairs by finding each "key":
+    pat = re.compile(r'"([A-Za-z_][A-Za-z0-9_]*)"\s*:\s*', re.S)
+    matches = list(pat.finditer(candidate))
+    for i, mm in enumerate(matches):
+        key = mm.group(1)
+        val_start = mm.end()
+        val_end = matches[i + 1].start() if i + 1 < len(matches) else len(candidate)
+        raw_val = candidate[val_start:val_end].strip()
+        # Trim trailing commas / closing braces / quotes
+        raw_val = raw_val.rstrip(",}] \n\r\t")
+        if not raw_val:
+            continue
+        # Try parsing as JSON value first (handles strings, numbers, arrays, bools).
+        parsed = None
         try:
-            return json.loads(m.group(0))
+            parsed = json.loads(raw_val)
         except Exception:
             pass
-    return {}
+        if parsed is None:
+            # Maybe a quoted string missing its closing quote
+            if raw_val.startswith('"'):
+                inner = raw_val[1:]
+                if inner.endswith('"'):
+                    inner = inner[:-1]
+                parsed = inner
+            elif raw_val.startswith("["):
+                # Try to recover an array of strings
+                try:
+                    parsed = json.loads(raw_val.rstrip(",") + "]" if not raw_val.endswith("]") else raw_val)
+                except Exception:
+                    parsed = []
+            else:
+                # Bare unquoted string — treat as plain text up to end
+                parsed = raw_val
+        out[key] = parsed
+    return out
 
 
 # UCI move pattern: from-square + to-square (+ optional promotion piece).
@@ -342,7 +444,8 @@ async def analyze_game(
         "- Strengths and improvements MUST be game-specific.\n"
         "Keep total content under ~350 words. Plain text inside fields (no headings)."
     )
-    raw = await chat(session, system, user_msg, max_tokens=1100, json_mode=True)
+    raw = await chat(session, system, user_msg, max_tokens=1100,
+                     temperature=0.2, json_mode=True)
     data = _extract_json(raw)
     return {
         "headline": _strip_uci(str(data.get("headline", "")).strip()),

@@ -82,7 +82,9 @@
                 <div class="d-embed-field-name">Summary</div>
                 <div class="d-embed-field-val">Solid until move 24, when Bxh3?? hung the bishop and let Black push c-pawn to victory. Activity over material was the lesson.</div>
               </div>
-              <div class="d-embed-img" aria-hidden="true"></div>
+              <img class="d-embed-img" loading="lazy"
+                   alt="Final position rendered by Lichess"
+                   src="https://lichess1.org/export/fen.gif?fen=r4rk1%2Fpp3ppp%2F2p1bn2%2F3p4%2F3P4%2F2N1PN2%2FPP3PPP%2F2RR2K1%20w%20-%20-%200%2018&color=white&lastMove=c2c1">
               <div class="d-embed-footer">Accuracy — White 78% · Black 91%</div>
             </div>
           </div>
@@ -115,7 +117,9 @@
             <div class="d-embed">
               <a class="d-embed-title" href="#" onclick="return false;">⚔️ Midgame — Tactical blunder</a>
               <div class="d-embed-desc"><em>Eval: <strong>+0.4 → -3.8</strong> (move 24)</em></div>
-              <div class="d-embed-img with-arrow" aria-hidden="true"></div>
+              <img class="d-embed-img" loading="lazy"
+                   alt="Critical position from a Lichess puzzle"
+                   src="https://lichess1.org/export/fen.gif?fen=r1bqk2r%2Fpp1n1ppp%2F2pbpn2%2F3p4%2F3P4%2F2NBPN2%2FPPP1QPPP%2FR1B2RK1%20b%20kq%20-%202%208&color=white&lastMove=e1e2">
               <div class="d-embed-footer">Engine recommends <code>Rfd1</code> · continuation <code>Rfd1 Qc7 Nb5</code></div>
             </div>
           </div>
@@ -161,6 +165,37 @@
     <li>In your server, run <code>/setup lichess:&lt;username&gt; channel:#chess</code>.</li>
     <li>Play on Lichess. Your next game arrives as a coached blog post.</li>
   </ol>
+  <div class="callout">
+    <strong>Heads up:</strong> you'll need a Discord server <em>where you have admin rights</em> to install the bot.
+    A personal server you create for yourself is perfect — it takes about 30 seconds.
+    See the guide below if you don't have one yet.
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Don't have a Discord server yet?</h2>
+  <p class="muted" style="margin-top: -6px;">
+    You need one with admin rights to add Chess Brain. Here's the 30-second
+    version — Discord's own UI walks you through every click.
+  </p>
+  <div class="server-guide">
+    <div class="step">
+      <span class="num">1</span><h4>Open Discord</h4>
+      <p>Use the <a href="https://discord.com/download" target="_blank" rel="noreferrer">desktop app</a> or <a href="https://discord.com/app" target="_blank" rel="noreferrer">web client</a>. Sign in (or create a free account — email + password, no payment).</p>
+    </div>
+    <div class="step">
+      <span class="num">2</span><h4>Click the “+” on the left</h4>
+      <p>In the server list on the far left, click the green <strong>+</strong> button → <strong>Create My Own</strong> → <strong>For me and my friends</strong>. Name it anything, e.g. <em>“My Chess Lab”</em>.</p>
+    </div>
+    <div class="step">
+      <span class="num">3</span><h4>You're the admin</h4>
+      <p>The server creator automatically has full admin rights. That's all Chess Brain needs to install. Come back here and click <strong>Start 7-day free trial</strong>.</p>
+    </div>
+  </div>
+  <p class="muted" style="margin-top: 12px; font-size: 13px;">
+    During <strong>Add to Discord</strong>, pick your new server from the dropdown and accept the
+    permissions. Then in any channel run <code>/setup lichess:&lt;your username&gt; channel:#general</code>.
+  </p>
 </section>
 
 <section class="panel center">
