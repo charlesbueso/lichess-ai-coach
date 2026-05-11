@@ -14,6 +14,8 @@ from saas.bot import bot, set_http
 from saas.coach import process_tenant
 from saas.web import app as fastapi_app
 
+import engine_pool
+
 log = logging.getLogger("coach.main")
 logging.basicConfig(
     level=logging.INFO,
@@ -105,6 +107,7 @@ async def amain():
     _init_sentry()
     _init_posthog()
     await db.init_pool()
+    await engine_pool.init_pool()
 
     http = aiohttp.ClientSession(
         headers={
@@ -143,6 +146,7 @@ async def amain():
         pass
     await http.close()
     await db.close_pool()
+    await engine_pool.close_pool()
     for t in (bot_task, web_task, poller_task):
         try:
             await t

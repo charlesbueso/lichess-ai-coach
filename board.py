@@ -426,6 +426,7 @@ async def find_worst_user_move(
     """
     import asyncio
     import engine as engine_mod
+    import engine_pool
 
     user_color = _user_color(raw_summary, username)
     sans = (raw_summary.get("moves") or "").split()
@@ -455,17 +456,20 @@ async def find_worst_user_move(
 
     log.info("find_worst_user_move: scanning %d user plies", len(user_plies))
 
-    # Query engine for each user position sequentially (free API — be polite).
+    # Bound concurrent game scans across the process so a flood of incoming
+    # games can't starve interactive /ask requests on the same engine pool.
+    local_engine = engine_pool.is_available()
     evals: list[Optional[float]] = []
     results: list[Optional[dict]] = []
-    for _, pre_fen, _ in user_plies:
-        res = await engine_mod.best_move(session, pre_fen, depth=12, think_ms=50)
-        ev = res.get("eval") if res else None
-        # ev is in centipawns (white-positive). Convert to pawns.
-        # chess-api.com returns eval already in pawns, NOT centipawns.
-        evals.append(ev if ev is not None else None)
-        results.append(res)
-        await asyncio.sleep(0.08)
+    async with engine_pool.game_scan_semaphore():
+        for _, pre_fen, _ in user_plies:
+            res = await engine_mod.best_move(session, pre_fen, depth=12, think_ms=50)
+            ev = res.get("eval") if res else None
+            evals.append(ev if ev is not None else None)
+            results.append(res)
+            if not local_engine:
+                # Politeness throttle for the chess-api.com fallback only.
+                await asyncio.sleep(0.08)
 
     # Find the move with the biggest negative eval swing between consecutive user moves.
     # Swing = eval_after_move - eval_before_move, from the user's perspective.

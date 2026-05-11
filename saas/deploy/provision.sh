@@ -19,6 +19,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3 python3-venv python3-pip python3-dev \
     postgresql postgresql-contrib \
     git ufw \
+    stockfish \
     fonts-dejavu-core tzdata ca-certificates curl \
     debian-keyring debian-archive-keyring apt-transport-https
 
@@ -36,6 +37,15 @@ ufw allow OpenSSH || true
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw --force enable
+
+echo "==> Ensuring 1 GB swap file (cheap RAM safety net on 1 GB droplets)"
+if [ ! -f /swapfile ]; then
+  fallocate -l 1G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=1024
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
 
 echo "==> Creating app user"
 id -u "$APP_USER" >/dev/null 2>&1 || useradd --system --create-home --shell /usr/sbin/nologin "$APP_USER"
@@ -105,6 +115,15 @@ SUPPORT_EMAIL=chessbrain.coach@gmail.com
 
 LICHESS_USERNAME=__saas__
 DISCORD_CHANNEL_ID=0
+
+# Local Stockfish engine pool (see engine_pool.py)
+STOCKFISH_PATH=/usr/games/stockfish
+STOCKFISH_POOL_SIZE=2
+STOCKFISH_THREADS=1
+STOCKFISH_HASH_MB=16
+STOCKFISH_CALL_TIMEOUT_S=5
+MAX_CONCURRENT_GAMES=2
+ENGINE_USE_REMOTE_FALLBACK=true
 EOF
   chmod 600 /etc/coach.env
   chown root:root /etc/coach.env

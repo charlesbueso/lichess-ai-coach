@@ -1,24 +1,35 @@
-"""Chess-API.com client — remote Stockfish 18 analysis (free tier).
+"""Engine analysis facade.
 
-POST https://chess-api.com/v1 with a FEN and get back the best move,
-eval, continuation, etc. No API key required for the free tier.
+Primary path: local Stockfish pool (`engine_pool`).
+Fallback path: chess-api.com remote (`engine_remote`) — used only when the
+local pool isn't available (binary missing, all engines crashed at startup,
+etc.) and `ENGINE_USE_REMOTE_FALLBACK` is truthy (default: true).
+
+The `best_move(session, fen, depth, think_ms)` signature and return shape
+are preserved so callers in `board.py` and `llm.py` don't need to change.
 """
 from __future__ import annotations
 
-import asyncio
 import logging
+import os
 from typing import Optional
 
 import aiohttp
 
+import engine_pool
+import engine_remote
+
 log = logging.getLogger("coach.engine")
 
-CHESS_API_URL = "https://chess-api.com/v1"
-_FREE_MAX_DEPTH = 18
-_FREE_MAX_THINK_MS = 100
-_REQUEST_TIMEOUT_S = 25
-_MAX_ATTEMPTS = 3
-_RETRY_BACKOFF_S = (1.0, 3.0)  # waits before attempts 2 and 3
+
+def _env_bool(name: str, default: bool) -> bool:
+    v = os.getenv(name)
+    if v is None:
+        return default
+    return v.strip().lower() in ("1", "true", "yes", "on")
+
+
+_USE_REMOTE_FALLBACK = _env_bool("ENGINE_USE_REMOTE_FALLBACK", True)
 
 
 async def best_move(
@@ -27,99 +38,24 @@ async def best_move(
     depth: int = 14,
     think_ms: int = 100,
 ) -> Optional[dict]:
-    """Query chess-api.com for the best move in a position.
+    """Return best-move analysis for `fen` or None on failure.
 
-    Returns a dict (the 'bestmove' response) with keys such as:
-        san, eval, mate, continuationArr, text, depth, winChance
-    Returns None on any failure so callers can degrade gracefully.
-
-    Retries on transient failures (timeouts, 5xx, network errors) so a
-    single flaky chess-api response doesn't blow up the whole game
-    analysis.
+    Returns a dict with chess-api.com-compatible keys (`san`, `lan`, `move`,
+    `eval` in pawns white-positive, `mate`, `depth`, `continuationArr`,
+    `text`). `session` is accepted for backwards compatibility with the
+    remote fallback path; the local pool ignores it.
     """
-    payload = {
-        "fen": fen,
-        "depth": min(depth, _FREE_MAX_DEPTH),
-        "maxThinkingTime": min(think_ms, _FREE_MAX_THINK_MS),
-        "variants": 1,
-    }
-
-    last_exc: Optional[BaseException] = None
-    for attempt in range(1, _MAX_ATTEMPTS + 1):
-        try:
-            async with session.post(
-                CHESS_API_URL,
-                json=payload,
-                timeout=aiohttp.ClientTimeout(total=_REQUEST_TIMEOUT_S),
-            ) as r:
-                if r.status == 429:
-                    log.warning("chess-api rate limited (429)")
-                    return None
-                if r.status >= 500:
-                    body = ""
-                    try:
-                        body = (await r.text())[:200]
-                    except Exception:
-                        pass
-                    log.warning(
-                        "chess-api %s (attempt %d/%d) body=%s",
-                        r.status, attempt, _MAX_ATTEMPTS, body,
-                    )
-                    # treat as transient -> retry
-                    raise aiohttp.ClientResponseError(
-                        request_info=r.request_info,
-                        history=r.history,
-                        status=r.status,
-                        message=f"chess-api {r.status}",
-                    )
-                if r.status != 200:
-                    body = ""
-                    try:
-                        body = (await r.text())[:200]
-                    except Exception:
-                        pass
-                    log.warning("chess-api %s body=%s", r.status, body)
-                    return None
-
-                data = await r.json(content_type=None)
-
-                # Response may be a list (streaming-style) or a single dict.
-                if isinstance(data, list):
-                    # Prefer the 'bestmove' type entry; fall back to last item.
-                    best = next(
-                        (item for item in reversed(data) if isinstance(item, dict) and item.get("type") == "bestmove"),
-                        None,
-                    ) or (data[-1] if data else None)
-                    return best
-                return data if isinstance(data, dict) else None
-
-        except (asyncio.TimeoutError, aiohttp.ClientError) as e:
-            last_exc = e
-            if attempt < _MAX_ATTEMPTS:
-                wait = _RETRY_BACKOFF_S[attempt - 1]
-                log.warning(
-                    "chess-api transient failure (attempt %d/%d) for fen=%s: "
-                    "%s — retrying in %.1fs",
-                    attempt, _MAX_ATTEMPTS, fen[:40], type(e).__name__, wait,
-                )
-                try:
-                    await asyncio.sleep(wait)
-                except asyncio.CancelledError:
-                    raise
-                continue
-            log.error(
-                "chess-api fetch failed for fen=%s after %d attempts: %s",
-                fen[:40], _MAX_ATTEMPTS, type(e).__name__,
-            )
+    if engine_pool.is_available():
+        result = await engine_pool.analyse(fen, depth=depth, think_ms=think_ms)
+        if result is not None:
+            return result
+        if not _USE_REMOTE_FALLBACK:
             return None
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            log.exception("chess-api fetch failed for fen=%s", fen[:40])
-            return None
+        log.warning("local pool returned None for fen=%s; trying remote", fen[:40])
+        return await engine_remote.best_move(session, fen, depth=depth, think_ms=think_ms)
 
-    if last_exc is not None:
-        log.warning("chess-api gave up for fen=%s (%s)", fen[:40], type(last_exc).__name__)
+    if _USE_REMOTE_FALLBACK:
+        return await engine_remote.best_move(session, fen, depth=depth, think_ms=think_ms)
     return None
 
 

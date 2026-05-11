@@ -432,6 +432,11 @@ async def on_ready():
     global _http
     if _http is None:
         _http = aiohttp.ClientSession()
+    try:
+        import engine_pool
+        await engine_pool.init_pool()
+    except Exception:
+        log.exception("engine_pool init failed; falling back to remote engine")
     log.info("Logged in as %s (channel=%s)", bot.user, config.DISCORD_CHANNEL_ID)
     if not weekly_loop.is_running():
         weekly_loop.start()

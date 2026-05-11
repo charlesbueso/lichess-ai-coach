@@ -25,5 +25,11 @@ PrivateTmp=true
 ReadWritePaths=/opt/lichess-ai-coach
 LimitNOFILE=65536
 
+# RAM safety net for the 1 GB droplet: if the python process + stockfish
+# engines blow past 800 MB, systemd OOM-kills only us (Postgres + Caddy
+# stay alive) and `Restart=always` brings us back.
+MemoryMax=800M
+MemoryHigh=700M
+
 [Install]
 WantedBy=multi-user.target
