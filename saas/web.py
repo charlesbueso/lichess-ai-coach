@@ -30,13 +30,18 @@ if (ROOT / "static").exists():
 
 
 def _ctx(request: Request, **extra) -> dict:
+    # Canonical absolute URL for this request (path only, no query) — used for
+    # <link rel="canonical"> and og:url so crawlers + LLMs see one URL per page.
+    canonical_url = app_config.BASE_URL + request.url.path
     return {
         "request": request,
         "app_name": app_config.APP_NAME,
         "base_url": app_config.BASE_URL,
+        "canonical_url": canonical_url,
         "support_email": app_config.SUPPORT_EMAIL,
         "posthog_key": app_config.POSTHOG_KEY,
         "posthog_host": app_config.POSTHOG_HOST,
+        "ga_id": app_config.GA_ID,
         **extra,
     }
 
@@ -73,6 +78,88 @@ async def terms(request: Request):
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}
+
+
+# ---------------- SEO / LLMO ----------------
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /checkout\n"
+        "Disallow: /connect\n"
+        "Disallow: /discord/\n"
+        "Disallow: /stripe/\n"
+        "Disallow: /recover\n"
+        f"Sitemap: {app_config.BASE_URL}/sitemap.xml\n"
+    )
+    return PlainTextResponse(body, headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.get("/sitemap.xml")
+async def sitemap_xml():
+    base = app_config.BASE_URL
+    urls = [
+        (f"{base}/",        "1.0", "weekly"),
+        (f"{base}/privacy", "0.3", "yearly"),
+        (f"{base}/terms",   "0.3", "yearly"),
+    ]
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for loc, prio, freq in urls:
+        parts.append(
+            f"<url><loc>{loc}</loc><changefreq>{freq}</changefreq>"
+            f"<priority>{prio}</priority></url>"
+        )
+    parts.append("</urlset>")
+    body = "".join(parts)
+    return PlainTextResponse(
+        body,
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+@app.get("/llms.txt", response_class=PlainTextResponse)
+async def llms_txt():
+    """LLM-friendly site summary (https://llmstxt.org/)."""
+    base = app_config.BASE_URL
+    body = (
+        f"# {app_config.APP_NAME}\n\n"
+        "> AI chess coach for Discord. Chess Brain dissects every Lichess "
+        "game you play with Stockfish 18 and delivers engine-verified "
+        "analysis — blunders, opening missteps, endgame breakdowns — "
+        "straight to a Discord channel you control. $5/month, 7-day free "
+        "trial, cancel any time.\n\n"
+        "## What it does\n\n"
+        "- Polls your public Lichess games every 10 minutes (no manual uploads).\n"
+        "- Runs Stockfish 18 on every finished game to find the critical moment.\n"
+        "- Posts a blog-style coached breakdown to your Discord channel.\n"
+        "- Lets you ask follow-up questions with `/ask` — full game stays in context.\n"
+        "- Renders the exact flagged position with `/board game_id move`.\n\n"
+        "## Pricing\n\n"
+        "- Single tier: $5 USD / month.\n"
+        "- 7-day free trial, card required, cancel any time via `/billing`.\n"
+        "- Up to 20 games analyzed per day. One Discord server per subscription.\n\n"
+        "## Setup\n\n"
+        "1. Subscribe via Stripe Checkout.\n"
+        "2. Click Add to Discord on the success page and pick your server.\n"
+        "3. Run `/setup lichess:<username> channel:#chess` in your server.\n"
+        "4. Play on Lichess — your next game arrives as a coached post.\n\n"
+        "## Key facts\n\n"
+        "- Engine: Stockfish 18.\n"
+        "- Source: read-only Lichess public games API (allowed for commercial use).\n"
+        "- Only analyzes completed games — never assists during play, not cheating.\n"
+        "- Open source: https://github.com/charlesbueso/lichess-ai-coach\n"
+        "- Not affiliated with or endorsed by Lichess.\n\n"
+        "## Pages\n\n"
+        f"- [Home]({base}/): product overview, features, FAQ, pricing.\n"
+        f"- [Privacy]({base}/privacy): what data is stored and why.\n"
+        f"- [Terms]({base}/terms): terms of service.\n\n"
+        f"## Contact\n\n- Support: {app_config.SUPPORT_EMAIL}\n"
+    )
+    return PlainTextResponse(body, headers={"Cache-Control": "public, max-age=3600"})
 
 
 # ---------------- checkout ----------------

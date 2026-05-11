@@ -3,16 +3,60 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ app_name }}{% endblock %}</title>
-  <link rel="icon" href="/static/chessbrain-logo.svg" type="image/svg+xml">
-  <link rel="alternate icon" href="/static/chessbrain-logo.png" type="image/png">
+  <title>{% block title %}{{ app_name }} — AI Chess Coach for Discord{% endblock %}</title>
+  <meta name="description" content="{% block description %}Chess Brain is an AI chess coach for Discord. It dissects every Lichess game you play with Stockfish 18 and posts engine-verified analysis — blunders, opening missteps, endgame breakdowns — straight to your channel. $5/mo, 7-day free trial.{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url }}{% endblock %}">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="icon" type="image/x-icon" href="/static/favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="/static/favicon/site.webmanifest">
   <meta name="theme-color" content="#A50256">
-  <meta property="og:title" content="Chess Brain — AI Chess Coach for Discord">
-  <meta property="og:description" content="Chess Brain dissects every Lichess game you play and delivers engine-verified analysis straight to your Discord. $5/mo.">
-  <meta property="og:image" content="/static/chessbrain-logo.png">
+
+  {# Open Graph / Twitter — page-level templates can override og_title/og_description blocks. #}
+  <meta property="og:site_name" content="Chess Brain">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+  <meta property="og:image" content="{{ base_url }}/static/chessbrain-logo.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="Chess Brain logo">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:image" content="/static/chessbrain-logo.png">
+  <meta name="twitter:title" content="{{ self.og_title() }}">
+  <meta name="twitter:description" content="{{ self.og_description() }}">
+  <meta name="twitter:image" content="{{ base_url }}/static/chessbrain-logo.png">
+
+  {# Default site-wide structured data: Organization + WebSite. Per-page templates
+     can add SoftwareApplication / FAQPage / Product JSON-LD via the schema block. #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "{{ base_url }}/#organization",
+        "name": "Chess Brain",
+        "url": "{{ base_url }}/",
+        "logo": "{{ base_url }}/static/chessbrain-logo.png",
+        "email": "{{ support_email }}",
+        "sameAs": ["https://github.com/charlesbueso/lichess-ai-coach"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "{{ base_url }}/#website",
+        "url": "{{ base_url }}/",
+        "name": "Chess Brain",
+        "publisher": {"@id": "{{ base_url }}/#organization"},
+        "inLanguage": "en"
+      }
+    ]
+  }
+  </script>
+  {% block schema %}{% endblock %}
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -500,6 +544,16 @@
       .badge { display: none; }
     }
   </style>
+  {% if ga_id %}
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ ga_id }}');
+  </script>
+  {% endif %}
   {% if posthog_key %}
   <script>
     !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);

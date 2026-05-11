@@ -52,6 +52,8 @@ POLL_INTERVAL_MINUTES    = int(os.getenv("POLL_INTERVAL_MINUTES", "10"))
 SENTRY_DSN   = os.getenv("SENTRY_DSN") or None
 POSTHOG_KEY  = os.getenv("POSTHOG_KEY") or None
 POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://us.i.posthog.com")
+# Google Analytics 4 Measurement ID (e.g. G-XXXXXXXXXX). Set to empty to disable.
+GA_ID        = os.getenv("GA_ID", "G-T77G930D0G") or None
 
 # --- Misc ---
 APP_NAME    = os.getenv("APP_NAME", "Lichess AI Coach")

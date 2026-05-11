@@ -1,4 +1,96 @@
 {% extends "base.html" %}
+
+{% block title %}Chess Brain — AI Chess Coach for Discord (Stockfish 18 + Lichess){% endblock %}
+{% block description %}Chess Brain auto-imports your Lichess games, runs Stockfish 18 on each one, and posts a coached blog-style breakdown — plus ask-anything follow-ups — straight to your Discord. $5/month, 7-day free trial, cancel anytime.{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Chess Brain",
+  "description": "AI chess coach for Discord. Auto-analyzes every Lichess game you play using Stockfish 18 and posts an engine-verified, coached breakdown to your Discord channel. Includes /ask follow-ups and /board position rendering.",
+  "applicationCategory": "GameApplication",
+  "applicationSubCategory": "Chess",
+  "operatingSystem": "Discord, Web",
+  "url": "{{ base_url }}/",
+  "image": "{{ base_url }}/static/chessbrain-logo.png",
+  "publisher": {"@id": "{{ base_url }}/#organization"},
+  "offers": {
+    "@type": "Offer",
+    "price": "5.00",
+    "priceCurrency": "USD",
+    "priceSpecification": {
+      "@type": "UnitPriceSpecification",
+      "price": "5.00",
+      "priceCurrency": "USD",
+      "unitText": "MONTH",
+      "billingDuration": "P1M"
+    },
+    "category": "subscription",
+    "availability": "https://schema.org/InStock",
+    "url": "{{ base_url }}/checkout"
+  },
+  "featureList": [
+    "Auto-imports finished Lichess games every 10 minutes",
+    "Stockfish 18 engine verification on every game",
+    "Coached blog-style analysis posted to Discord",
+    "/ask conversational follow-ups with full game context",
+    "/board renders the critical position inline",
+    "Up to 20 games analyzed per day"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Will Lichess ban me for using this?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Chess Brain uses Lichess's public games API with a polite User-Agent and stays well under their rate limits. Lichess explicitly allows this kind of read-only commercial use."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is this cheating?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Chess Brain only analyzes completed games. It never assists during play, doesn't connect to your client, and never sees your live position. It works the same way a human coach reviewing your games afterward would."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I cancel any time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Run /billing in your Discord server to open Stripe's customer portal — cancel, update card, or download invoices in two clicks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What do you store about my games?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The minimum required to post analysis: your Lichess username, game IDs already coached (so we don't repeat ourselves), and the analysis text published to your channel. Full PGNs are pulled from Lichess on demand and not retained."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Chess Brain track stats or compare me to other players?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Chess Brain only knows about your games, inside your server. There are no leaderboards, no rating curves stored, no benchmarks against other subscribers."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 
 <section class="panel featured hero">
