@@ -358,7 +358,9 @@ async def analyze_game(
     """Returns a dict with sectioned coaching feedback for blog-style display."""
     system = (
         COACH_SYSTEM
-        + "\nYou MUST respond with a single JSON object, no prose, no code fences."
+        + "\nYou MUST respond with a single valid JSON object, no prose, no code fences. "
+        "Every string value MUST be wrapped in double quotes. Unquoted values are INVALID "
+        "and will cause the response to be rejected."
     )
     user_color = key_moments.get("user_color") or "?"
     opponent = "black" if user_color == "white" else "white"
@@ -437,6 +439,17 @@ async def analyze_game(
         "Each must tie to a concrete move/judgment from the move table or a clear pattern visible in it. "
         "Forbidden: generic advice like 'improve pawn structure' without naming where it broke down.\n"
         '  "style_note": one short observation about playing style/patterns visible in this game.\n'
+        "JSON FORMAT RULES (STRICT — violating these fails the response):\n"
+        "- Return ONE valid JSON object and nothing else (no prose before/after, no markdown fences).\n"
+        '- EVERY string value MUST be wrapped in double quotes, e.g. "summary": "ChessCharli started strong..." '
+        '— NEVER write `"summary": ChessCharli started strong...` (unquoted value is INVALID JSON).\n'
+        "- Escape any internal double quotes with a backslash (\\\").\n"
+        "- Arrays use square brackets with quoted string items: [\"item one\", \"item two\"].\n"
+        "- No trailing commas. No comments. No single quotes.\n"
+        "- Shape example (values are placeholders, do NOT copy them):\n"
+        '  {"headline": "...", "summary": "...", "opening_comment": "...", '
+        '"midgame_comment": "...", "endgame_comment": "...", '
+        '"strengths": ["...", "..."], "improvements": ["...", "..."], "style_note": "..."}\n'
         "RULES:\n"
         f"- Only reference moves that ACTUALLY appear in the move table for {username} "
         "or in the strict-facts blocks above.\n"
